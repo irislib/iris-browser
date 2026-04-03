@@ -3,6 +3,7 @@
 Standalone workspace for the Iris native browser shell.
 
 Source: <https://git.iris.to/#/npub1xdhnr9mrv47kkrn95k6cwecearydeh8e895990n3acntwvmgk2dsdeeycm/iris-browser>
+Built on Hashtree: <https://git.iris.to/#/npub1xdhnr9mrv47kkrn95k6cwecearydeh8e895990n3acntwvmgk2dsdeeycm/hashtree>
 
 It contains the Iris Tauri app under `apps/iris`. The embedded daemon uses the
 published Hashtree Rust crates through Cargo.

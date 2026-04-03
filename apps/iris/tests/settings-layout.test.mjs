@@ -36,3 +36,9 @@ test('settings navigation keeps colored icon pills for each top-level section', 
   assert.match(settingsSource, /bg-sky-500\/12 text-sky-500 ring-1 ring-sky-500\/20/);
   assert.match(settingsSource, /bg-amber-500\/12 text-amber-500 ring-1 ring-amber-500\/20/);
 });
+
+test('about tab exposes a separate Built on Hashtree section', () => {
+  assert.match(settingsSource, /const hashtreeLinks = \[/);
+  assert.match(settingsSource, /label: 'Open Hashtree repository'/);
+  assert.match(settingsSource, /Built on Hashtree/);
+});

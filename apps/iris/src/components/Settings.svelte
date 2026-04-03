@@ -103,6 +103,14 @@
       url: `htree://${distributedOwner}/git/#/${distributedOwner}/iris-browser/apps/iris`,
     },
   ] as const;
+  const hashtreeLinks = [
+    {
+      label: 'Open Hashtree repository',
+      description: 'Storage, sync, and git transport used by this shell',
+      icon: 'i-lucide-box',
+      url: `htree://${distributedOwner}/git/#/${distributedOwner}/hashtree`,
+    },
+  ] as const;
   const NETWORK_STATUS_POLL_INTERVAL_MS = 2000;
   const CLIPBOARD_CLEAR_DELAY_MS = sensitiveClipboardClearDelayMs();
   const COPY_FEEDBACK_DURATION_MS = 2_500;
@@ -1285,6 +1293,28 @@
             <p class="text-xs text-text-3 mb-3">Open the project in Iris Git over htree URLs</p>
             <div class="bg-surface-2 rounded divide-y divide-surface-3">
               {#each sourceLinks as link (link.url)}
+                <button
+                  class="w-full p-3 text-left hover:bg-surface-3 transition-colors flex items-start gap-3"
+                  onclick={() => openSource(link.url)}
+                >
+                  <span class="{link.icon} mt-0.5 text-text-3 shrink-0"></span>
+                  <span class="min-w-0 flex-1">
+                    <span class="block text-sm font-medium text-text-1">{link.label}</span>
+                    <span class="block text-xs text-text-3 mt-1">{link.description}</span>
+                    <span class="block text-xs text-text-3 font-mono mt-2 break-all">{link.url}</span>
+                  </span>
+                </button>
+              {/each}
+            </div>
+          </div>
+
+          <div>
+            <h3 class="text-xs font-medium text-muted uppercase tracking-wide mb-1">
+              Built on Hashtree
+            </h3>
+            <p class="text-xs text-text-3 mb-3">Open the storage and transport stack behind this shell</p>
+            <div class="bg-surface-2 rounded divide-y divide-surface-3">
+              {#each hashtreeLinks as link (link.url)}
                 <button
                   class="w-full p-3 text-left hover:bg-surface-3 transition-colors flex items-start gap-3"
                   onclick={() => openSource(link.url)}
