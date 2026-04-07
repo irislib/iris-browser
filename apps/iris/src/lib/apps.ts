@@ -58,6 +58,7 @@ export function matchesPwaIdentity(left: PwaIdentityLike, right: PwaIdentityLike
 export const distributedOwner = 'npub1xdhnr9mrv47kkrn95k6cwecearydeh8e895990n3acntwvmgk2dsdeeycm';
 
 const irisLauncherIcons = {
+  audio: '/iris-audio-icon.svg',
   files: '/iris-files-icon.svg',
   video: '/iris-video-icon.svg',
   docs: '/iris-docs-icon.svg',
@@ -72,6 +73,7 @@ function builtInAppUrl(treeName: string): string {
 }
 
 const builtInIrisTreeNames = new Set([
+  'audio',
   'files',
   'video',
   'docs',
@@ -89,6 +91,7 @@ export function isBuiltInIrisApp(host?: string, treename?: string): boolean {
 }
 
 export const suggestedIrisApps: readonly AppBookmark[] = [
+  { url: builtInAppUrl('audio'), name: 'Iris Audio', icon: irisLauncherIcons.audio, addedAt: 0 },
   { url: builtInAppUrl('files'), name: 'Iris Files', icon: irisLauncherIcons.files, addedAt: 0 },
   { url: builtInAppUrl('video'), name: 'Iris Video', icon: irisLauncherIcons.video, addedAt: 0 },
   { url: builtInAppUrl('docs'), name: 'Iris Docs', icon: irisLauncherIcons.docs, addedAt: 0 },

@@ -38,10 +38,12 @@ test.describe('App Launcher', () => {
     await expect(favourites.getByText('Iris Git')).not.toBeVisible();
     await expect(favourites.getByText('Iris Maps')).not.toBeVisible();
     await expect(favourites.getByText('Iris Boards')).not.toBeVisible();
+    await expect(favourites.getByText('Iris Audio')).not.toBeVisible();
     await expect(favourites.getByText('Iris Social')).not.toBeVisible();
     await expect(favourites.getByText('Iris Chat')).not.toBeVisible();
     await expect(favourites.getByText('Iris Meet')).not.toBeVisible();
 
+    await expect(suggestions.getByText('Iris Audio')).toBeVisible();
     await expect(suggestions.getByText('Iris Files')).toBeVisible();
     await expect(suggestions.getByText('Iris Video')).toBeVisible();
     await expect(suggestions.getByText('Iris Docs')).toBeVisible();
