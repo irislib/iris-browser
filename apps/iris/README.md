@@ -17,6 +17,23 @@ Iris keeps the canonical app identity as `htree://...`, but child webviews load 
 
 The `actual_url` transport detail is intentional: it keeps content on the local daemon backend while delegating storage isolation to the browser's own origin model instead of trying to emulate it in app code.
 
+## App Compatibility
+
+To keep one app working in Iris, on `browser.iris.to`, and under `sites.iris.to`, build it like a portable static site:
+
+- Use relative asset URLs. Prefer `base: './'`, `./favicon.png`, and `fetch('./data.json')` over root-relative `/assets/...` or `/api/...`.
+- Keep service workers relative to the current document path. Different htree roots intentionally get different origins and storage buckets.
+- Avoid assuming a fixed localhost origin. Resolve same-app URLs from `window.location` unless you explicitly need the embedded daemon.
+- For Vite apps that should also run from `sites.iris.to`, disable module preload and strip emitted `modulepreload` / `crossorigin` tags from `index.html`. See [`apps/browser-site/vite.config.ts`](/Users/sirius/src/iris-browser/apps/browser-site/vite.config.ts) for the portable pattern used by the landing page.
+
+Iris exposes a small runtime bridge for apps that need htree context:
+
+- `window.__HTREE_SERVER_URL__` points at the embedded htree daemon HTTP endpoint. Use it when you need daemon-backed APIs instead of hardcoding `127.0.0.1`.
+- `window.__HTREE_CANONICAL_URL__` resolves to the canonical `htree://...` URL for the current document after bootstrap. It starts as `null`.
+- `window.__HTREE_SESSION_TOKEN__` exists for Iris' internal bridge plumbing. Avoid depending on it in portable app code unless you are integrating with Iris-specific webview internals.
+
+Iris currently passes `iris_htree_server`, `iris_htree_canonical`, `iris_htree_session`, and `iris_htree_root` through the initial launch URL, then strips them during bootstrap. Treat those query params as transport details, not a public app API.
+
 ## Development
 
 ```bash

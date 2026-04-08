@@ -9,6 +9,10 @@ It contains the Iris Tauri app under `apps/iris`. The embedded daemon uses the
 published Hashtree Rust crates through Cargo. The `browser.iris.to` landing site
 lives in `apps/browser-site`.
 
+For app/runtime compatibility details, including the `window.__HTREE_*` bridge
+and portable `sites.iris.to` build rules, see
+[`apps/iris/README.md`](/Users/sirius/src/iris-browser/apps/iris/README.md).
+
 ## Layout
 
 - `apps/browser-site` - `browser.iris.to` landing site, screenshot asset, and release script

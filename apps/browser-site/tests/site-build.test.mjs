@@ -25,6 +25,11 @@ test('build output contains the landing page title, copy, and screenshot asset',
     .join('\n');
 
   assert.match(html, /browser\.iris\.to \| Iris Browser/);
+  assert.match(html, /href="\.\/iris-favicon\.png"/);
+  assert.match(html, /src="\.\/assets\//);
+  assert.doesNotMatch(html, /src="\/assets\//);
+  assert.doesNotMatch(html, /modulepreload/);
+  assert.doesNotMatch(html, /crossorigin/);
   assert.match(jsBundle, /The native browser for /);
   assert.match(jsBundle, /Nostr apps\./);
   assert.match(jsBundle, /browser-jumble-nip07\.jpg/);
