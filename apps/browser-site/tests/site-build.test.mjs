@@ -33,16 +33,17 @@ test('build output contains the landing page title, copy, and screenshot assets'
   assert.match(html, /browser\.iris\.to \| Iris Browser/);
   assert.match(
     html,
-    /A simple browser for everyday websites, shared links that keep working longer, and clear account prompts\./,
+    /A better internet is here: put websites online for free, save them to offline mode, share nearby, and skip extra accounts\./,
   );
   assert.match(html, /href="\.\/iris-favicon\.png"/);
   assert.match(html, /src="\.\/assets\//);
   assert.doesNotMatch(html, /src="\/assets\//);
   assert.doesNotMatch(html, /modulepreload/);
   assert.doesNotMatch(html, /crossorigin/);
-  assert.match(jsBundle, /Share a link\. Open it later\. Still get where you meant to go\./);
-  assert.match(jsBundle, /Shared links stay useful/);
-  assert.match(jsBundle, /Sharing should still work\./);
+  assert.match(jsBundle, /A better internet is here\./);
+  assert.match(jsBundle, /Download for Mac/);
+  assert.match(jsBundle, /Apple Silicon Macs for now\./);
+  assert.match(jsBundle, /Save websites to offline mode/);
   assert.match(jsBundle, /browser-home\.jpg/);
   assert.match(jsBundle, /browser-jumble\.jpg/);
   assert.match(jsBundle, /browser-permission\.jpg/);

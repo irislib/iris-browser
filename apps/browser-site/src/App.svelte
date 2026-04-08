@@ -1,21 +1,44 @@
 <script lang="ts">
   const baseUrl = import.meta.env.BASE_URL;
+  const sourceUrl =
+    'https://git.iris.to/#/npub1xdhnr9mrv47kkrn95k6cwecearydeh8e895990n3acntwvmgk2dsdeeycm/iris-browser';
+  const downloadUrl =
+    'https://upload.iris.to/npub1xdhnr9mrv47kkrn95k6cwecearydeh8e895990n3acntwvmgk2dsdeeycm/releases%2Firis-browser/latest/assets/iris-v0.1.4-macos-arm64.zip';
+  let current = $state(0);
+
+  const sellingPoints = [
+    'Put websites online for free',
+    'Save websites to offline mode',
+    'Share to nearby devices over Wi-Fi',
+    'Send files without the usual friction',
+    'Skip email, phone, and extra accounts',
+  ];
 
   const benefits = [
     {
-      title: 'Feels familiar',
+      title: 'Put websites online for free',
       body:
-        'Keep the basics you expect: an address bar, favorites, history, and a simple place to start.',
+        'Share a website without handing it over to a giant platform or paying for hosting just to get started.',
     },
     {
-      title: 'Shared links stay useful',
+      title: 'Save websites to offline mode',
       body:
-        'Open something a friend sends without feeling like you are one refresh away from a missing page.',
+        'Keep a website ready to open even when your connection gets weak, slow, or disappears.',
     },
     {
-      title: 'Your account stays yours',
+      title: 'Share to nearby devices',
       body:
-        'If a site wants to use your account, Iris asks first so nothing happens quietly.',
+        'Send a website straight to phones and laptops around you over Wi-Fi, without bouncing through somebody else first.',
+    },
+    {
+      title: 'Effortless file sharing',
+      body:
+        'Move files from one device to another without digging through links, inboxes, or cloud drives.',
+    },
+    {
+      title: 'No extra accounts required',
+      body:
+        'People should not need a third-party email, phone number, or signup just to open and use a website.',
     },
   ];
 
@@ -23,38 +46,33 @@
     {
       src: `${baseUrl}browser-home.jpg`,
       alt: 'Iris Browser home screen with favorites and suggestions',
-      kicker: 'Start from home',
-      title: 'Keep the things you use close',
-      body: 'Favorites, suggestions, and recent places stay in one calm starting point.',
+      title: 'Start from a calm home screen',
+      body: 'Favorites, suggestions, and recent places stay close instead of getting lost.',
     },
     {
       src: `${baseUrl}browser-jumble.jpg`,
-      alt: 'Iris Browser opening the Jumble app',
-      kicker: 'Open what people share',
-      title: 'A shared link can feel like a real app',
-      body: 'Move from a message to a working app without the usual dead-end feeling.',
+      alt: 'Iris Browser opening a shared website',
+      title: 'Open shared websites like real apps',
+      body: 'A link from someone else can open cleanly instead of feeling disposable.',
     },
     {
       src: `${baseUrl}browser-permission.jpg`,
       alt: 'Iris Browser showing an account access prompt',
-      kicker: 'Stay in charge',
-      title: 'Account access is always explicit',
-      body: 'When a site wants to use your account, Iris puts the choice in front of you.',
+      title: 'Account access stays explicit',
+      body: 'If a website wants to use your account, Iris puts the choice in front of you.',
     },
   ];
 
-  const promises = [
-    'Use ordinary websites and web apps',
-    'Keep shared links easier to reopen later',
-    'See clear account prompts before anything happens',
-  ];
+  function go(index: number) {
+    current = (index + gallery.length) % gallery.length;
+  }
 </script>
 
 <svelte:head>
   <title>browser.iris.to | Iris Browser</title>
   <meta
     name="description"
-    content="A simple browser for everyday websites, shared links that keep working longer, and clear account prompts."
+    content="A better internet is here: put websites online for free, save them to offline mode, share nearby, and skip extra accounts."
   />
 </svelte:head>
 
@@ -63,74 +81,114 @@
   <div class="backdrop backdrop-b"></div>
 
   <header class="topbar">
-    <a class="brand" href="https://git.iris.to/#/npub1xdhnr9mrv47kkrn95k6cwecearydeh8e895990n3acntwvmgk2dsdeeycm/iris-browser">
+    <a class="brand" href={sourceUrl}>
       Iris Browser
     </a>
-    <a class="toplink" href="#gallery">Screenshots</a>
+    <a class="toplink" href="#screenshots">Screenshots</a>
   </header>
 
   <main class="content">
     <section class="hero">
       <div class="hero-copy">
         <p class="eyebrow">browser.iris.to</p>
-        <h1>Share a link. Open it later. Still get where you meant to go.</h1>
+        <h1>A better internet is here.</h1>
         <p class="lede">
-          Iris Browser feels familiar on purpose. Use everyday websites, keep your favorites
-          close, and open what people share without running into so many dead ends.
+          Put websites online for free, save them to offline mode, send them to nearby devices,
+          share files easily, and skip the usual account maze.
         </p>
 
         <div class="actions">
-          <a
-            class="button button-primary"
-            href="https://git.iris.to/#/npub1xdhnr9mrv47kkrn95k6cwecearydeh8e895990n3acntwvmgk2dsdeeycm/iris-browser"
-          >
-            Source
+          <a class="button button-primary" href={downloadUrl}>
+            Download for Mac
           </a>
-          <a class="button button-secondary" href="#gallery">See screenshots</a>
+          <a class="button button-secondary" href="#benefits">Why it matters</a>
         </div>
 
+        <p class="download-note">Apple Silicon Macs for now.</p>
+
         <div class="pill-row">
-          {#each promises as promise}
-            <span class="pill">{promise}</span>
+          {#each sellingPoints as point}
+            <span class="pill">{point}</span>
+          {/each}
+        </div>
+      </div>
+
+      <div id="screenshots" class="hero-gallery">
+        <div class="gallery-topline">
+          <p class="section-label">Screenshots</p>
+          <div class="gallery-controls">
+            <button
+              type="button"
+              class="gallery-button"
+              aria-label="Previous screenshot"
+              onclick={() => go(current - 1)}
+            >
+              Prev
+            </button>
+            <button
+              type="button"
+              class="gallery-button"
+              aria-label="Next screenshot"
+              onclick={() => go(current + 1)}
+            >
+              Next
+            </button>
+          </div>
+        </div>
+
+        <div class="carousel-viewport">
+          <div class="carousel-track" style={`transform: translateX(calc(-${current} * (100% + 1rem)));`}>
+            {#each gallery as shot}
+              <figure class="gallery-card">
+                <div class="shot-frame">
+                  <img src={shot.src} alt={shot.alt} />
+                </div>
+                <figcaption>
+                  <h2>{shot.title}</h2>
+                  <p>{shot.body}</p>
+                </figcaption>
+              </figure>
+            {/each}
+          </div>
+        </div>
+
+        <div class="thumb-row">
+          {#each gallery as shot, index}
+            <button
+              type="button"
+              class:thumb-active={index === current}
+              class="thumb"
+              aria-label={`Show ${shot.title}`}
+              aria-pressed={index === current}
+              onclick={() => go(index)}
+            >
+              <img src={shot.src} alt="" />
+              <span>{shot.title}</span>
+            </button>
           {/each}
         </div>
       </div>
     </section>
 
-    <section class="capability-grid">
-      {#each benefits as benefit}
-        <article class="capability-card">
-          <p class="card-kicker">{benefit.title}</p>
-          <p>{benefit.body}</p>
-        </article>
-      {/each}
-    </section>
-
-    <section id="gallery" class="gallery-section">
-      <div class="gallery-copy">
-        <p class="section-label">In practice</p>
-        <h2>Sharing should still work.</h2>
-        <p>
-          Open the web you know, keep your usual places close, and make a link from someone else
-          less likely to turn into a dead end.
-        </p>
+    <section id="benefits" class="benefit-section">
+      <div class="section-copy">
+        <p class="section-label">Why It Matters</p>
+        <h3>Websites should stay useful when you are offline, nearby, and sharing.</h3>
       </div>
 
-      <div class="gallery-grid">
-        {#each gallery as shot}
-          <figure class="gallery-card">
-            <div class="shot-frame">
-              <img src={shot.src} alt={shot.alt} />
-            </div>
-            <figcaption>
-              <p class="card-kicker">{shot.kicker}</p>
-              <h3>{shot.title}</h3>
-              <p>{shot.body}</p>
-            </figcaption>
-          </figure>
+      <div class="benefit-grid">
+        {#each benefits as benefit}
+          <article class="benefit-card">
+            <p class="card-kicker">{benefit.title}</p>
+            <p>{benefit.body}</p>
+          </article>
         {/each}
       </div>
     </section>
+
+    <footer class="site-footer">
+      <a href={sourceUrl}>Source</a>
+    </footer>
   </main>
 </div>
 
@@ -196,7 +254,7 @@
   .content {
     position: relative;
     z-index: 1;
-    width: min(1080px, calc(100% - 2rem));
+    width: min(1180px, calc(100% - 2rem));
     margin: 0 auto;
   }
 
@@ -225,14 +283,21 @@
   }
 
   .content {
-    padding: 3.5rem 0 4rem;
+    padding: 3rem 0 4rem;
   }
 
   .hero-copy,
-  .capability-card,
-  .gallery-copy,
-  .gallery-card {
+  .hero-gallery,
+  .section-copy,
+  .benefit-card {
     animation: rise 0.7s ease-out both;
+  }
+
+  .hero {
+    display: grid;
+    grid-template-columns: minmax(0, 0.86fr) minmax(0, 1.14fr);
+    gap: 1.35rem;
+    align-items: start;
   }
 
   .eyebrow,
@@ -254,28 +319,28 @@
   }
 
   h1 {
-    max-width: 13ch;
+    max-width: 10ch;
     color: #23170f;
-    font-size: clamp(2.9rem, 6.4vw, 4.85rem);
+    font-size: clamp(3rem, 6.5vw, 5rem);
     line-height: 0.94;
-    letter-spacing: -0.055em;
+    letter-spacing: -0.06em;
   }
 
   h2 {
-    max-width: 11ch;
-    font-size: clamp(2rem, 4vw, 3.15rem);
+    font-size: 1.18rem;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+  }
+
+  h3 {
+    max-width: 18ch;
+    font-size: clamp(2rem, 4vw, 3rem);
     line-height: 1;
     letter-spacing: -0.05em;
   }
 
-  h3 {
-    font-size: 1.32rem;
-    line-height: 1.15;
-    letter-spacing: -0.03em;
-  }
-
   .lede {
-    max-width: 40rem;
+    max-width: 34rem;
     margin-top: 1.15rem;
     color: rgba(36, 24, 15, 0.78);
     font-size: 1.08rem;
@@ -328,6 +393,12 @@
     margin-top: 1.5rem;
   }
 
+  .download-note {
+    margin-top: 0.85rem;
+    color: rgba(36, 24, 15, 0.64);
+    font-size: 0.92rem;
+  }
+
   .pill {
     display: inline-flex;
     align-items: center;
@@ -340,51 +411,59 @@
     font-size: 0.88rem;
   }
 
-  .capability-grid {
-    display: grid;
-    gap: 1rem;
-    margin-top: 2.4rem;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .capability-card {
-    padding: 1.35rem;
-    border-radius: 1.4rem;
-    background: rgba(255, 255, 255, 0.74);
-    border: 1px solid rgba(36, 24, 15, 0.08);
-    box-shadow: 0 18px 40px rgba(98, 64, 21, 0.08);
-  }
-
-  .capability-card p:last-child,
-  .gallery-copy p:last-child,
-  figcaption p:last-child {
-    color: rgba(36, 24, 15, 0.76);
-    line-height: 1.6;
-  }
-
-  .gallery-section {
-    margin-top: 3.2rem;
-  }
-
-  .gallery-copy p:last-child {
-    max-width: 38rem;
-    margin-top: 1rem;
-  }
-
-  .gallery-grid {
-    display: grid;
-    gap: 1rem;
-    margin-top: 1.6rem;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-
-  .gallery-card {
-    margin: 0;
-    padding: 0.9rem;
-    border-radius: 1.6rem;
+  .hero-gallery {
+    min-width: 0;
+    padding: 0.95rem;
+    border-radius: 1.8rem;
     background: rgba(255, 255, 255, 0.72);
     border: 1px solid rgba(36, 24, 15, 0.08);
     box-shadow: 0 18px 40px rgba(98, 64, 21, 0.08);
+  }
+
+  .gallery-topline {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .gallery-topline .section-label {
+    margin-bottom: 0;
+  }
+
+  .gallery-controls {
+    display: flex;
+    gap: 0.55rem;
+  }
+
+  .gallery-button {
+    min-height: 2.4rem;
+    padding: 0 0.95rem;
+    border: 1px solid rgba(36, 24, 15, 0.1);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.7);
+    color: #24180f;
+    font: inherit;
+    font-size: 0.88rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .carousel-viewport {
+    overflow: hidden;
+    margin-top: 0.9rem;
+  }
+
+  .carousel-track {
+    display: flex;
+    gap: 1rem;
+    transition: transform 220ms ease;
+    will-change: transform;
+  }
+
+  .gallery-card {
+    min-width: 100%;
+    margin: 0;
   }
 
   .shot-frame {
@@ -414,15 +493,100 @@
   }
 
   figcaption {
+    margin-top: 0.9rem;
+  }
+
+  figcaption p {
+    margin-top: 0.55rem;
+    color: rgba(36, 24, 15, 0.76);
+    line-height: 1.55;
+  }
+
+  .thumb-row {
+    display: grid;
+    gap: 0.8rem;
+    margin-top: 0.9rem;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .thumb {
+    display: grid;
+    gap: 0.55rem;
+    padding: 0.45rem;
+    border: 1px solid rgba(36, 24, 15, 0.08);
+    border-radius: 1rem;
+    background: rgba(255, 255, 255, 0.55);
+    color: #24180f;
+    text-align: left;
+    font: inherit;
+    cursor: pointer;
+    transition:
+      transform 160ms ease,
+      border-color 160ms ease,
+      background 160ms ease;
+  }
+
+  .thumb:hover {
+    transform: translateY(-1px);
+  }
+
+  .thumb img {
+    width: 100%;
+    border-radius: 0.75rem;
+  }
+
+  .thumb span {
+    padding: 0 0.2rem 0.15rem;
+    font-size: 0.86rem;
+    font-weight: 700;
+    line-height: 1.25;
+  }
+
+  .thumb-active {
+    border-color: rgba(141, 69, 28, 0.32);
+    background: rgba(255, 255, 255, 0.86);
+    box-shadow: 0 12px 30px rgba(98, 64, 21, 0.08);
+  }
+
+  .benefit-section {
+    margin-top: 3rem;
+  }
+
+  .site-footer {
+    margin-top: 2rem;
+    padding-top: 1rem;
+    color: rgba(36, 24, 15, 0.68);
+    font-size: 0.95rem;
+  }
+
+  .site-footer a {
+    text-decoration: underline;
+    text-underline-offset: 0.18em;
+  }
+
+  .section-copy p:last-child {
+    max-width: 40rem;
     margin-top: 1rem;
   }
 
-  figcaption h3 {
-    max-width: 14ch;
+  .benefit-grid {
+    display: grid;
+    gap: 1rem;
+    margin-top: 1.35rem;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 
-  figcaption p:last-child {
-    margin-top: 0.7rem;
+  .benefit-card {
+    padding: 1.25rem;
+    border-radius: 1.4rem;
+    background: rgba(255, 255, 255, 0.74);
+    border: 1px solid rgba(36, 24, 15, 0.08);
+    box-shadow: 0 18px 40px rgba(98, 64, 21, 0.08);
+  }
+
+  .benefit-card p:last-child {
+    color: rgba(36, 24, 15, 0.76);
+    line-height: 1.6;
   }
 
   @keyframes rise {
@@ -446,15 +610,14 @@
     }
   }
 
-  @media (max-width: 980px) {
-    .capability-grid,
-    .gallery-grid {
+  @media (max-width: 1100px) {
+    .hero,
+    .benefit-grid {
       grid-template-columns: 1fr;
     }
 
     h1,
-    h2,
-    figcaption h3 {
+    h3 {
       max-width: none;
     }
   }
@@ -465,15 +628,24 @@
     }
 
     .content {
-      padding-top: 2.6rem;
+      padding-top: 2.4rem;
     }
 
     h1 {
-      font-size: clamp(2.55rem, 13vw, 4rem);
+      font-size: clamp(2.6rem, 12vw, 4rem);
     }
 
-    .capability-card,
-    .gallery-card {
+    .hero-gallery,
+    .benefit-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .thumb-row {
+      grid-template-columns: 1fr;
+    }
+
+    .hero-gallery,
+    .benefit-card {
       border-radius: 1.3rem;
     }
 
