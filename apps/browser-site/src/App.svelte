@@ -473,26 +473,6 @@
     primaryDownload = sorted[0] ?? fallbackAsset;
   }
 
-  function downloadNote() {
-    if (releaseAssets.length > 1) {
-      return 'The main button picks the best match for this device. More options are below.';
-    }
-
-    if (primaryDownload.platform === 'mac') {
-      return 'Mac available now. Windows and Linux can show up here as they are released.';
-    }
-
-    if (primaryDownload.platform === 'windows') {
-      return 'Windows available now. More downloads can show up here as they are released.';
-    }
-
-    if (primaryDownload.platform === 'linux') {
-      return 'Linux available now. More downloads can show up here as they are released.';
-    }
-
-    return 'More downloads can show up here as they are released.';
-  }
-
   function githubReleaseApiUrl(tag?: string | null) {
     if (tag?.trim()) {
       return `https://api.github.com/repos/${githubRepo}/releases/tags/${encodeURIComponent(tag.trim())}`;
@@ -615,8 +595,6 @@
             </button>
           {/if}
         </div>
-
-        <p class="download-note">{downloadNote()}</p>
 
         {#if showAllDownloads && releaseAssets.length > 1}
           <div class="download-list">
@@ -958,13 +936,6 @@
   .button.secondary {
     background: transparent;
     color: var(--text-1);
-  }
-
-  .download-note {
-    margin: 0.85rem 0 0;
-    color: var(--text-3);
-    font-size: 0.9rem;
-    line-height: 1.5;
   }
 
   .download-list {

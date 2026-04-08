@@ -48,7 +48,6 @@ test('build output contains the landing page title, copy, and screenshot assets'
   assert.match(jsBundle, /Send files without the usual friction/);
   assert.match(jsBundle, /Skip email, phone, and extra accounts/);
   assert.match(jsBundle, /Download for Mac/);
-  assert.match(jsBundle, /More options are below\./);
   assert.match(jsBundle, /More options/);
   assert.match(jsBundle, /upload\.iris\.to/);
   assert.match(jsBundle, /releases%2Firis-browser\/latest/);
