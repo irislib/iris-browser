@@ -12,6 +12,11 @@
   "scripts": {
     "dev": "pnpm --dir apps/iris dev",
     "build": "pnpm --dir apps/iris build",
+    "dev:site": "pnpm --dir apps/browser-site dev",
+    "build:site": "pnpm --dir apps/browser-site build",
+    "preview:site": "pnpm --dir apps/browser-site preview",
+    "test:site": "pnpm --dir apps/browser-site test",
+    "release:site": "pnpm --dir apps/browser-site release:site",
     "test": "pnpm --dir apps/iris test",
     "test:release": "pnpm --dir apps/iris test:release",
     "test:icons": "pnpm --dir apps/iris test:icons",

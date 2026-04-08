@@ -6,10 +6,12 @@ Source: <https://git.iris.to/#/npub1xdhnr9mrv47kkrn95k6cwecearydeh8e895990n3acnt
 Built on Hashtree: <https://git.iris.to/#/npub1xdhnr9mrv47kkrn95k6cwecearydeh8e895990n3acntwvmgk2dsdeeycm/hashtree>
 
 It contains the Iris Tauri app under `apps/iris`. The embedded daemon uses the
-published Hashtree Rust crates through Cargo.
+published Hashtree Rust crates through Cargo. The `browser.iris.to` landing site
+lives in `apps/browser-site`.
 
 ## Layout
 
+- `apps/browser-site` - `browser.iris.to` landing site, screenshot asset, and release script
 - `apps/iris` - Svelte frontend, Tauri shell, Playwright/e2e tests, and local release scripts
 
 ## Development
@@ -17,6 +19,7 @@ published Hashtree Rust crates through Cargo.
 ```bash
 pnpm install
 pnpm build
+pnpm run build:site
 pnpm test
 pnpm run test:rust
 ```
@@ -26,6 +29,7 @@ Native smoke and release helpers run from this repo directly:
 ```bash
 pnpm run test:native:docker
 pnpm run release:native -- --dry-run --only linux
+pnpm run release:site -- --dry-run --skip-cloudflare
 ```
 
 Git remote setup for Hashtree-first development:

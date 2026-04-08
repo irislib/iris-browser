@@ -1,0 +1,30 @@
+{
+  "name": "browser-site",
+  "version": "0.1.0",
+  "license": "MIT",
+  "private": true,
+  "description": "browser.iris.to landing site",
+  "repository": "https://git.iris.to/#/npub1xdhnr9mrv47kkrn95k6cwecearydeh8e895990n3acntwvmgk2dsdeeycm/iris-browser",
+  "homepage": "https://git.iris.to/#/npub1xdhnr9mrv47kkrn95k6cwecearydeh8e895990n3acntwvmgk2dsdeeycm/iris-browser/apps/browser-site",
+  "bugs": {
+    "url": "https://git.iris.to/#/npub1xdhnr9mrv47kkrn95k6cwecearydeh8e895990n3acntwvmgk2dsdeeycm/iris-browser?tab=issues"
+  },
+  "type": "module",
+  "packageManager": "pnpm@10.28.2",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "pnpm run build && node --test tests/site-build.test.mjs tests/releaseSite.test.mjs",
+    "test:release": "node --test tests/site-build.test.mjs tests/releaseSite.test.mjs",
+    "release:site": "node ./scripts/release-site.mjs"
+  },
+  "devDependencies": {
+    "@sveltejs/vite-plugin-svelte": "^5.0.3",
+    "@tsconfig/svelte": "^5.0.4",
+    "svelte": "^5.16.0",
+    "typescript": "^5.3.0",
+    "unocss": "^66.5.9",
+    "vite": "^6.0.0"
+  }
+}
