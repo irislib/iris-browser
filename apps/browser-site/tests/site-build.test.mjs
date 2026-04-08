@@ -33,7 +33,7 @@ test('build output contains the landing page title, copy, and screenshot assets'
   assert.match(html, /browser\.iris\.to \| Iris Browser/);
   assert.match(
     html,
-    /A better internet is here: put websites online for free, save them to offline mode, share nearby, and skip extra accounts\./,
+    /A better internet is here: publish websites for free, save them to offline mode, share nearby, and skip extra accounts\./,
   );
   assert.match(html, /href="\.\/iris-favicon\.png"/);
   assert.match(html, /src="\.\/assets\//);
@@ -41,8 +41,13 @@ test('build output contains the landing page title, copy, and screenshot assets'
   assert.doesNotMatch(html, /modulepreload/);
   assert.doesNotMatch(html, /crossorigin/);
   assert.match(jsBundle, /A better internet is here\./);
+  assert.match(jsBundle, /Publish websites for free/);
   assert.match(jsBundle, /Download for Mac/);
   assert.match(jsBundle, /Apple Silicon Macs for now\./);
+  assert.match(jsBundle, /All downloads/);
+  assert.match(jsBundle, /upload\.iris\.to/);
+  assert.match(jsBundle, /releases%2Firis-browser\/latest/);
+  assert.match(jsBundle, /release\.json/);
   assert.match(jsBundle, /Save websites to offline mode/);
   assert.match(jsBundle, /browser-home\.jpg/);
   assert.match(jsBundle, /browser-jumble\.jpg/);

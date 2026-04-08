@@ -1,13 +1,43 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
+
   const baseUrl = import.meta.env.BASE_URL;
   const sourceUrl =
     'https://git.iris.to/#/npub1xdhnr9mrv47kkrn95k6cwecearydeh8e895990n3acntwvmgk2dsdeeycm/iris-browser';
-  const downloadUrl =
-    'https://upload.iris.to/npub1xdhnr9mrv47kkrn95k6cwecearydeh8e895990n3acntwvmgk2dsdeeycm/releases%2Firis-browser/latest/assets/iris-v0.1.4-macos-arm64.zip';
+  const releaseBaseUrl =
+    'https://upload.iris.to/npub1xdhnr9mrv47kkrn95k6cwecearydeh8e895990n3acntwvmgk2dsdeeycm/releases%2Firis-browser/latest';
+  const releaseManifestUrl = `${releaseBaseUrl}/release.json`;
+  type DownloadAsset = {
+    name: string;
+    href: string;
+    label: string;
+    ctaLabel: string;
+    size: number;
+    sizeLabel: string;
+    platform: 'mac' | 'windows' | 'linux' | 'unknown';
+    arch: 'arm64' | 'x64' | 'unknown';
+    priority: number;
+  };
+
+  const fallbackAsset: DownloadAsset = {
+    name: 'iris-v0.1.4-macos-arm64.zip',
+    href: `${releaseBaseUrl}/assets/iris-v0.1.4-macos-arm64.zip`,
+    label: 'Mac (Apple Silicon)',
+    ctaLabel: 'Download for Mac',
+    size: 20_744_558,
+    sizeLabel: '19.8 MB',
+    platform: 'mac',
+    arch: 'arm64',
+    priority: 50,
+  };
+
   let current = $state(0);
+  let releaseAssets = $state<DownloadAsset[]>([fallbackAsset]);
+  let primaryDownload = $state<DownloadAsset>(fallbackAsset);
+  let showAllDownloads = $state(false);
 
   const sellingPoints = [
-    'Put websites online for free',
+    'Publish websites for free',
     'Save websites to offline mode',
     'Share to nearby devices over Wi-Fi',
     'Send files without the usual friction',
@@ -16,9 +46,9 @@
 
   const benefits = [
     {
-      title: 'Put websites online for free',
+      title: 'Publish websites for free',
       body:
-        'Share a website without handing it over to a giant platform or paying for hosting just to get started.',
+        'Publish a website without handing it over to a giant platform or paying for hosting just to get started.',
     },
     {
       title: 'Save websites to offline mode',
@@ -66,13 +96,180 @@
   function go(index: number) {
     current = (index + gallery.length) % gallery.length;
   }
+
+  function formatSize(size: number): string {
+    if (!Number.isFinite(size) || size <= 0) {
+      return '';
+    }
+
+    return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
+  function describeAsset(name: string): Omit<DownloadAsset, 'name' | 'href' | 'size' | 'sizeLabel'> {
+    if (/macos-arm64\.zip$/i.test(name)) {
+      return {
+        label: 'Mac (Apple Silicon)',
+        ctaLabel: 'Download for Mac',
+        platform: 'mac',
+        arch: 'arm64',
+        priority: 50,
+      };
+    }
+
+    if (/windows-x64-setup\.exe$/i.test(name)) {
+      return {
+        label: 'Windows',
+        ctaLabel: 'Download for Windows',
+        platform: 'windows',
+        arch: 'x64',
+        priority: 40,
+      };
+    }
+
+    if (/windows-arm64-setup\.exe$/i.test(name)) {
+      return {
+        label: 'Windows (ARM)',
+        ctaLabel: 'Download for Windows',
+        platform: 'windows',
+        arch: 'arm64',
+        priority: 39,
+      };
+    }
+
+    if (/linux-x86_64\.AppImage$/i.test(name)) {
+      return {
+        label: 'Linux AppImage',
+        ctaLabel: 'Download for Linux',
+        platform: 'linux',
+        arch: 'x64',
+        priority: 35,
+      };
+    }
+
+    if (/linux-x86_64\.deb$/i.test(name)) {
+      return {
+        label: 'Linux .deb',
+        ctaLabel: 'Download for Linux',
+        platform: 'linux',
+        arch: 'x64',
+        priority: 34,
+      };
+    }
+
+    return {
+      label: name,
+      ctaLabel: 'Download',
+      platform: 'unknown',
+      arch: 'unknown',
+      priority: 0,
+    };
+  }
+
+  function detectPlatform() {
+    if (typeof navigator === 'undefined') {
+      return { platform: 'unknown', arch: 'unknown' } as const;
+    }
+
+    const navigatorWithData = navigator as Navigator & {
+      userAgentData?: {
+        platform?: string;
+        architecture?: string;
+      };
+    };
+
+    const platformSource = `${navigatorWithData.userAgentData?.platform ?? ''} ${navigator.platform ?? ''} ${navigator.userAgent}`.toLowerCase();
+    const archSource = `${navigatorWithData.userAgentData?.architecture ?? ''} ${navigator.userAgent}`.toLowerCase();
+
+    const platform = platformSource.includes('mac')
+      ? 'mac'
+      : platformSource.includes('win')
+        ? 'windows'
+        : platformSource.includes('linux')
+          ? 'linux'
+          : 'unknown';
+
+    const arch = archSource.includes('arm') || archSource.includes('aarch64')
+      ? 'arm64'
+      : archSource.includes('x86_64') ||
+          archSource.includes('win64') ||
+          archSource.includes('x64') ||
+          archSource.includes('amd64') ||
+          archSource.includes('intel')
+        ? 'x64'
+        : 'unknown';
+
+    return { platform, arch } as const;
+  }
+
+  function scoreAsset(asset: DownloadAsset) {
+    const detected = detectPlatform();
+    let score = asset.priority;
+
+    if (asset.platform === detected.platform) {
+      score += 100;
+    }
+
+    if (asset.arch === detected.arch && asset.arch !== 'unknown') {
+      score += 20;
+    }
+
+    return score;
+  }
+
+  function sortAssets(assets: DownloadAsset[]) {
+    return [...assets].sort((left, right) => scoreAsset(right) - scoreAsset(left));
+  }
+
+  function syncPrimaryDownload(assets: DownloadAsset[]) {
+    const sorted = sortAssets(assets);
+    primaryDownload = sorted[0] ?? fallbackAsset;
+  }
+
+  function downloadNote() {
+    if (releaseAssets.length > 1) {
+      return 'The button above picks the best match we have for this device.';
+    }
+
+    return 'Apple Silicon Macs for now. More downloads can appear here later.';
+  }
+
+  onMount(async () => {
+    try {
+      const response = await fetch(releaseManifestUrl, { cache: 'no-store' });
+      if (!response.ok) {
+        throw new Error(`Release manifest request failed with ${response.status}`);
+      }
+
+      const manifest = await response.json() as {
+        assets?: Array<{ name: string; path: string; size: number }>;
+      };
+
+      const assets = (manifest.assets ?? []).map((asset) => {
+        const described = describeAsset(asset.name);
+        return {
+          name: asset.name,
+          href: `${releaseBaseUrl}/${asset.path}`,
+          size: asset.size,
+          sizeLabel: formatSize(asset.size),
+          ...described,
+        } satisfies DownloadAsset;
+      });
+
+      if (assets.length > 0) {
+        releaseAssets = assets;
+        syncPrimaryDownload(assets);
+      }
+    } catch (error) {
+      console.warn('[browser-site] failed to load release manifest', error);
+    }
+  });
 </script>
 
 <svelte:head>
   <title>browser.iris.to | Iris Browser</title>
   <meta
     name="description"
-    content="A better internet is here: put websites online for free, save them to offline mode, share nearby, and skip extra accounts."
+    content="A better internet is here: publish websites for free, save them to offline mode, share nearby, and skip extra accounts."
   />
 </svelte:head>
 
@@ -93,18 +290,41 @@
         <p class="eyebrow">browser.iris.to</p>
         <h1>A better internet is here.</h1>
         <p class="lede">
-          Put websites online for free, save them to offline mode, send them to nearby devices,
+          Publish websites for free, save them to offline mode, send them to nearby devices,
           share files easily, and skip the usual account maze.
         </p>
 
         <div class="actions">
-          <a class="button button-primary" href={downloadUrl}>
-            Download for Mac
+          <a class="button button-primary" href={primaryDownload.href}>
+            {primaryDownload.ctaLabel}
           </a>
           <a class="button button-secondary" href="#benefits">Why it matters</a>
         </div>
 
-        <p class="download-note">Apple Silicon Macs for now.</p>
+        <div class="download-meta">
+          <p class="download-note">{downloadNote()}</p>
+          {#if releaseAssets.length > 1}
+            <button
+              type="button"
+              class="downloads-toggle"
+              aria-expanded={showAllDownloads}
+              onclick={() => (showAllDownloads = !showAllDownloads)}
+            >
+              {showAllDownloads ? 'Hide downloads' : 'All downloads'}
+            </button>
+          {/if}
+        </div>
+
+        {#if showAllDownloads && releaseAssets.length > 1}
+          <div class="download-list">
+            {#each releaseAssets as asset}
+              <a class="download-item" href={asset.href}>
+                <span class="download-item-name">{asset.label}</span>
+                <span class="download-item-size">{asset.sizeLabel}</span>
+              </a>
+            {/each}
+          </div>
+        {/if}
 
         <div class="pill-row">
           {#each sellingPoints as point}
@@ -394,9 +614,55 @@
   }
 
   .download-note {
-    margin-top: 0.85rem;
     color: rgba(36, 24, 15, 0.64);
     font-size: 0.92rem;
+  }
+
+  .download-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.85rem;
+    margin-top: 0.85rem;
+  }
+
+  .downloads-toggle {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: #8d451c;
+    font: inherit;
+    font-size: 0.92rem;
+    font-weight: 700;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 0.18em;
+  }
+
+  .download-list {
+    display: grid;
+    gap: 0.6rem;
+    margin-top: 0.9rem;
+  }
+
+  .download-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.9rem 1rem;
+    border-radius: 1rem;
+    background: rgba(255, 255, 255, 0.56);
+    border: 1px solid rgba(36, 24, 15, 0.08);
+  }
+
+  .download-item-name {
+    font-weight: 700;
+  }
+
+  .download-item-size {
+    color: rgba(36, 24, 15, 0.6);
+    font-size: 0.9rem;
   }
 
   .pill {
