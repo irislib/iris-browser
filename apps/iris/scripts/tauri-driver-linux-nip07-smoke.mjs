@@ -542,7 +542,7 @@ async function acceptPermissionPromptsUntil(
     }
 
     const ui = await (async () => {
-      const dialogWindow = xdotoolSearchByName('NIP-07 Permission').at(-1) ?? null;
+      const dialogWindow = xdotoolSearchByName('Account Access').at(-1) ?? null;
       if (dialogWindow) {
         return { kind: 'native-window', target: dialogWindow };
       }

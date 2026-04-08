@@ -1427,17 +1427,17 @@
   function permissionMethodLabel(method: string): string {
     switch (method) {
       case 'getPublicKey':
-        return 'read your public key';
+        return 'see which account you are using';
       case 'signEvent':
-        return 'sign Nostr events';
+        return 'ask for your approval';
       case 'nip04.encrypt':
       case 'nip44.encrypt':
-        return 'encrypt messages';
+        return 'protect messages for you';
       case 'nip04.decrypt':
       case 'nip44.decrypt':
-        return 'decrypt messages';
+        return 'open your private messages';
       default:
-        return method;
+        return 'use your account';
     }
   }
 

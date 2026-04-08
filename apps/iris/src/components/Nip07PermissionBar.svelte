@@ -31,12 +31,13 @@
 >
   <div class={`flex ${compact ? 'flex-col gap-3' : 'items-start gap-4'}`}>
     <div class="min-w-0 flex-1">
-      <div class="text-[11px] font-medium uppercase tracking-wide text-text-3">NIP-07 Permission</div>
+      <div class="text-[11px] font-medium uppercase tracking-wide text-text-3">Account Access</div>
       <h2 class={`mt-1 font-semibold text-text-1 ${compact ? 'text-sm leading-5' : 'text-sm'}`}>
-        Allow this site to {permissionMethodLabel(prompt.method)}?
+        Allow this site to use your account?
       </h2>
       <p class="mt-1 text-xs leading-relaxed text-text-2">
-        Iris is asking on behalf of <span class="font-medium text-text-1">{permissionOriginLabel(prompt.origin)}</span>.
+        It wants to {permissionMethodLabel(prompt.method)}. Iris is asking on behalf of <span
+          class="font-medium text-text-1">{permissionOriginLabel(prompt.origin)}</span>.
       </p>
       <p class="mt-2 break-all rounded-xl bg-surface-1 px-2.5 py-2 text-[11px] text-text-3">
         {prompt.origin}

@@ -1321,7 +1321,7 @@ fn nip07_pubkey_param(params: &serde_json::Value) -> Result<PublicKey, String> {
 #[cfg(any(target_os = "macos", windows, target_os = "linux"))]
 fn native_permission_dialog_message(origin: &str, method: &str) -> String {
     format!(
-        "{} wants to {}.\n\n{}",
+        "{} wants to use your account.\n\nIt wants to {}.\n\n{}",
         origin,
         permission_method_description(method),
         "Iris is asking on behalf of the site you opened."
@@ -1330,11 +1330,11 @@ fn native_permission_dialog_message(origin: &str, method: &str) -> String {
 
 fn permission_method_description(method: &str) -> &'static str {
     match method {
-        "getPublicKey" => "read your public key",
-        "signEvent" => "sign Nostr events",
-        "nip04.encrypt" | "nip44.encrypt" => "encrypt messages",
-        "nip04.decrypt" | "nip44.decrypt" => "decrypt messages",
-        _ => "use your Nostr account",
+        "getPublicKey" => "see which account you are using",
+        "signEvent" => "ask for your approval",
+        "nip04.encrypt" | "nip44.encrypt" => "protect messages for you",
+        "nip04.decrypt" | "nip44.decrypt" => "open your private messages",
+        _ => "use your account",
     }
 }
 
@@ -1399,7 +1399,7 @@ async fn prompt_native_permission_decision<R: Runtime>(
     origin: &str,
     method: &str,
 ) -> Result<Nip07PermissionDecisionAction, String> {
-    let title = "NIP-07 Permission";
+    let title = "Account Access";
     let primary = show_native_message_dialog(
         app,
         title,

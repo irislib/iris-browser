@@ -1,31 +1,52 @@
 <script lang="ts">
-  const capabilities = [
+  const baseUrl = import.meta.env.BASE_URL;
+
+  const benefits = [
     {
-      title: 'Open distributed apps',
+      title: 'Feels familiar',
       body:
-        'Load htree:// trees with real per-root browser origins instead of flattening every app onto one localhost bucket.',
+        'Keep the basics you expect: an address bar, favorites, history, and a simple place to start.',
     },
     {
-      title: 'Permissioned NIP-07',
+      title: 'Shared links stay useful',
       body:
-        'Sites can ask for your pubkey or signatures and Iris keeps the decision explicit: allow this session, always allow, deny, or block.',
+        'Open something a friend sends without feeling like you are one refresh away from a missing page.',
     },
     {
-      title: 'Install the web you want',
+      title: 'Your account stays yours',
       body:
-        'Regular HTTPS PWAs and distributed apps can live in the same shell, with an address bar, favorites, history, and install flows.',
-    },
-    {
-      title: 'Local daemon included',
-      body:
-        'The browser ships with its own hashtree daemon so transport, caching, and mesh-friendly paths stay close to the app instead of a remote service.',
+        'If a site wants to use your account, Iris asks first so nothing happens quietly.',
     },
   ];
 
-  const examples = [
-    'Jumble asking Iris for NIP-07 access with a visible permission prompt',
-    'Iris Files, Docs, Maps, Video, and Git loaded over htree://',
-    'Normal web apps installed beside distributed apps in one launcher',
+  const gallery = [
+    {
+      src: `${baseUrl}browser-home.jpg`,
+      alt: 'Iris Browser home screen with favorites and suggestions',
+      kicker: 'Start from home',
+      title: 'Keep the things you use close',
+      body: 'Favorites, suggestions, and recent places stay in one calm starting point.',
+    },
+    {
+      src: `${baseUrl}browser-jumble.jpg`,
+      alt: 'Iris Browser opening the Jumble app',
+      kicker: 'Open what people share',
+      title: 'A shared link can feel like a real app',
+      body: 'Move from a message to a working app without the usual dead-end feeling.',
+    },
+    {
+      src: `${baseUrl}browser-permission.jpg`,
+      alt: 'Iris Browser showing an account access prompt',
+      kicker: 'Stay in charge',
+      title: 'Account access is always explicit',
+      body: 'When a site wants to use your account, Iris puts the choice in front of you.',
+    },
+  ];
+
+  const promises = [
+    'Use ordinary websites and web apps',
+    'Keep shared links easier to reopen later',
+    'See clear account prompts before anything happens',
   ];
 </script>
 
@@ -33,7 +54,7 @@
   <title>browser.iris.to | Iris Browser</title>
   <meta
     name="description"
-    content="A native browser shell for htree apps, installed PWAs, and explicit NIP-07 permissions."
+    content="A simple browser for everyday websites, shared links that keep working longer, and clear account prompts."
   />
 </svelte:head>
 
@@ -45,19 +66,17 @@
     <a class="brand" href="https://git.iris.to/#/npub1xdhnr9mrv47kkrn95k6cwecearydeh8e895990n3acntwvmgk2dsdeeycm/iris-browser">
       Iris Browser
     </a>
-    <a class="toplink" href="#capabilities">What it enables</a>
+    <a class="toplink" href="#gallery">Screenshots</a>
   </header>
 
   <main class="content">
     <section class="hero">
       <div class="hero-copy">
         <p class="eyebrow">browser.iris.to</p>
-        <h1>
-          The native browser for <span>htree</span> and Nostr apps.
-        </h1>
+        <h1>Share a link. Open it later. Still get where you meant to go.</h1>
         <p class="lede">
-          Open ordinary web apps and distributed trees in one place, keep origin boundaries intact,
-          and let sites request NIP-07 access with explicit permissions.
+          Iris Browser feels familiar on purpose. Use everyday websites, keep your favorites
+          close, and open what people share without running into so many dead ends.
         </p>
 
         <div class="actions">
@@ -67,57 +86,48 @@
           >
             Source
           </a>
-          <a class="button button-secondary" href="#capabilities">
-            What it enables
-          </a>
+          <a class="button button-secondary" href="#gallery">See screenshots</a>
         </div>
 
         <div class="pill-row">
-          <span class="pill">htree:// origins</span>
-          <span class="pill">NIP-07 permissions</span>
-          <span class="pill">Installed PWAs</span>
-          <span class="pill">Embedded daemon</span>
+          {#each promises as promise}
+            <span class="pill">{promise}</span>
+          {/each}
         </div>
       </div>
-
-      <figure class="hero-shot">
-        <div class="shot-frame">
-          <img
-            src="/browser-jumble-nip07.jpg"
-            alt="Iris Browser showing the Jumble app with a NIP-07 permission prompt"
-          />
-        </div>
-        <figcaption>
-          Latest desktop build browsing Jumble with Iris handling a NIP-07 permission prompt.
-        </figcaption>
-      </figure>
     </section>
 
-    <section id="capabilities" class="capability-grid">
-      {#each capabilities as capability}
+    <section class="capability-grid">
+      {#each benefits as benefit}
         <article class="capability-card">
-          <p class="card-kicker">{capability.title}</p>
-          <p>{capability.body}</p>
+          <p class="card-kicker">{benefit.title}</p>
+          <p>{benefit.body}</p>
         </article>
       {/each}
     </section>
 
-    <section class="examples-panel">
-      <div class="examples-copy">
-        <p class="section-label">What it enables</p>
-        <h2>One shell for the web you use and the web you publish.</h2>
+    <section id="gallery" class="gallery-section">
+      <div class="gallery-copy">
+        <p class="section-label">In practice</p>
+        <h2>Sharing should still work.</h2>
         <p>
-          Iris is meant for distributed apps that still deserve normal browser ergonomics:
-          navigation, history, installs, permissions, and proper storage boundaries.
+          Open the web you know, keep your usual places close, and make a link from someone else
+          less likely to turn into a dead end.
         </p>
       </div>
 
-      <div class="example-list">
-        {#each examples as example}
-          <div class="example-item">
-            <span class="example-dot"></span>
-            <span>{example}</span>
-          </div>
+      <div class="gallery-grid">
+        {#each gallery as shot}
+          <figure class="gallery-card">
+            <div class="shot-frame">
+              <img src={shot.src} alt={shot.alt} />
+            </div>
+            <figcaption>
+              <p class="card-kicker">{shot.kicker}</p>
+              <h3>{shot.title}</h3>
+              <p>{shot.body}</p>
+            </figcaption>
+          </figure>
         {/each}
       </div>
     </section>
@@ -218,27 +228,11 @@
     padding: 3.5rem 0 4rem;
   }
 
-  .hero {
-    display: grid;
-    gap: 2.5rem;
-    align-items: start;
-    grid-template-columns: minmax(0, 0.84fr) minmax(440px, 1.16fr);
-  }
-
   .hero-copy,
-  .hero-shot {
-    min-width: 0;
-  }
-
-  .hero-copy,
-  .hero-shot,
   .capability-card,
-  .examples-panel {
+  .gallery-copy,
+  .gallery-card {
     animation: rise 0.7s ease-out both;
-  }
-
-  .hero-shot {
-    animation-delay: 0.12s;
   }
 
   .eyebrow,
@@ -254,24 +248,34 @@
 
   h1,
   h2,
+  h3,
   p {
     margin: 0;
   }
 
   h1 {
-    max-width: 12ch;
+    max-width: 13ch;
     color: #23170f;
     font-size: clamp(2.9rem, 6.4vw, 4.85rem);
     line-height: 0.94;
     letter-spacing: -0.055em;
   }
 
-  h1 span {
-    color: #8d451c;
+  h2 {
+    max-width: 11ch;
+    font-size: clamp(2rem, 4vw, 3.15rem);
+    line-height: 1;
+    letter-spacing: -0.05em;
+  }
+
+  h3 {
+    font-size: 1.32rem;
+    line-height: 1.15;
+    letter-spacing: -0.03em;
   }
 
   .lede {
-    max-width: 34rem;
+    max-width: 40rem;
     margin-top: 1.15rem;
     color: rgba(36, 24, 15, 0.78);
     font-size: 1.08rem;
@@ -336,50 +340,11 @@
     font-size: 0.88rem;
   }
 
-  .hero-shot {
-    margin: 0;
-    justify-self: end;
-    width: min(100%, 42rem);
-  }
-
-  .shot-frame {
-    position: relative;
-    overflow: hidden;
-    border-radius: 1.8rem;
-    background: rgba(15, 10, 7, 0.92);
-    padding: 0.85rem;
-    box-shadow:
-      0 24px 70px rgba(53, 31, 8, 0.24),
-      inset 0 0 0 1px rgba(255, 255, 255, 0.08);
-  }
-
-  .shot-frame::before {
-    content: '';
-    position: absolute;
-    inset: 0.85rem;
-    border-radius: 1.2rem;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    pointer-events: none;
-  }
-
-  .shot-frame img {
-    width: 100%;
-    border-radius: 1.2rem;
-    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.34);
-  }
-
-  figcaption {
-    margin-top: 0.9rem;
-    color: rgba(36, 24, 15, 0.7);
-    font-size: 0.92rem;
-    line-height: 1.5;
-  }
-
   .capability-grid {
     display: grid;
     gap: 1rem;
-    margin-top: 3rem;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    margin-top: 2.4rem;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .capability-card {
@@ -390,64 +355,74 @@
     box-shadow: 0 18px 40px rgba(98, 64, 21, 0.08);
   }
 
-  .capability-card p:last-child {
+  .capability-card p:last-child,
+  .gallery-copy p:last-child,
+  figcaption p:last-child {
     color: rgba(36, 24, 15, 0.76);
     line-height: 1.6;
   }
 
-  .examples-panel {
-    display: grid;
-    gap: 2rem;
-    align-items: start;
-    margin-top: 1.2rem;
-    padding: 1.5rem;
-    border-radius: 1.8rem;
-    background: rgba(22, 17, 11, 0.96);
-    color: #f8efe2;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr);
+  .gallery-section {
+    margin-top: 3.2rem;
   }
 
-  .examples-copy .section-label {
-    color: #ffbe7a;
-  }
-
-  .examples-copy h2 {
-    max-width: 14ch;
-    font-size: clamp(2rem, 4vw, 3.15rem);
-    line-height: 1;
-    letter-spacing: -0.05em;
-  }
-
-  .examples-copy p:last-child {
-    max-width: 34rem;
+  .gallery-copy p:last-child {
+    max-width: 38rem;
     margin-top: 1rem;
-    color: rgba(248, 239, 226, 0.76);
-    line-height: 1.65;
   }
 
-  .example-list {
+  .gallery-grid {
     display: grid;
-    gap: 0.9rem;
+    gap: 1rem;
+    margin-top: 1.6rem;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  .example-item {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.8rem;
-    padding: 1rem 1.05rem;
-    border-radius: 1.1rem;
-    background: rgba(255, 255, 255, 0.06);
-    color: rgba(248, 239, 226, 0.88);
-    line-height: 1.55;
+  .gallery-card {
+    margin: 0;
+    padding: 0.9rem;
+    border-radius: 1.6rem;
+    background: rgba(255, 255, 255, 0.72);
+    border: 1px solid rgba(36, 24, 15, 0.08);
+    box-shadow: 0 18px 40px rgba(98, 64, 21, 0.08);
   }
 
-  .example-dot {
-    width: 0.65rem;
-    height: 0.65rem;
-    margin-top: 0.45rem;
-    border-radius: 999px;
-    background: linear-gradient(135deg, #ff9c63, #ffd17d);
-    flex: 0 0 auto;
+  .shot-frame {
+    position: relative;
+    overflow: hidden;
+    border-radius: 1.3rem;
+    background: rgba(15, 10, 7, 0.92);
+    padding: 0.65rem;
+    box-shadow:
+      0 24px 70px rgba(53, 31, 8, 0.16),
+      inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  }
+
+  .shot-frame::before {
+    content: '';
+    position: absolute;
+    inset: 0.65rem;
+    border-radius: 0.95rem;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    pointer-events: none;
+  }
+
+  .shot-frame img {
+    width: 100%;
+    border-radius: 0.95rem;
+    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.34);
+  }
+
+  figcaption {
+    margin-top: 1rem;
+  }
+
+  figcaption h3 {
+    max-width: 14ch;
+  }
+
+  figcaption p:last-child {
+    margin-top: 0.7rem;
   }
 
   @keyframes rise {
@@ -472,20 +447,15 @@
   }
 
   @media (max-width: 980px) {
-    .hero,
-    .examples-panel,
-    .capability-grid {
+    .capability-grid,
+    .gallery-grid {
       grid-template-columns: 1fr;
     }
 
     h1,
-    .examples-copy h2 {
+    h2,
+    figcaption h3 {
       max-width: none;
-    }
-
-    .hero-shot {
-      justify-self: stretch;
-      width: 100%;
     }
   }
 
@@ -498,22 +468,27 @@
       padding-top: 2.6rem;
     }
 
-    .hero {
-      gap: 1.8rem;
-    }
-
     h1 {
       font-size: clamp(2.55rem, 13vw, 4rem);
     }
 
-    .examples-panel,
-    .capability-card {
+    .capability-card,
+    .gallery-card {
       border-radius: 1.3rem;
     }
 
     .shot-frame {
-      padding: 0.65rem;
-      border-radius: 1.4rem;
+      border-radius: 1.1rem;
+      padding: 0.55rem;
+    }
+
+    .shot-frame::before {
+      inset: 0.55rem;
+      border-radius: 0.8rem;
+    }
+
+    .shot-frame img {
+      border-radius: 0.8rem;
     }
   }
 </style>
