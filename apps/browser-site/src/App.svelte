@@ -4,6 +4,7 @@
   const baseUrl = import.meta.env.BASE_URL;
   const sourceUrl =
     'https://git.iris.to/#/npub1xdhnr9mrv47kkrn95k6cwecearydeh8e895990n3acntwvmgk2dsdeeycm/iris-browser';
+  const githubRepo = 'irislib/iris-browser';
   const releaseBaseUrl =
     'https://upload.iris.to/npub1xdhnr9mrv47kkrn95k6cwecearydeh8e895990n3acntwvmgk2dsdeeycm/releases%2Firis-browser/latest';
   const releaseManifestUrl = `${releaseBaseUrl}/release.json`;
@@ -18,6 +19,20 @@
     platform: 'mac' | 'windows' | 'linux' | 'unknown';
     arch: 'arm64' | 'x64' | 'unknown';
     priority: number;
+    variantKey: string;
+  };
+
+  type ReleaseManifestAsset = {
+    name: string;
+    path: string;
+    size: number;
+  };
+
+  type GithubReleaseAsset = {
+    name: string;
+    browser_download_url?: string;
+    size: number;
+    state?: string;
   };
 
   type Screenshot = {
@@ -35,15 +50,16 @@
   };
 
   const fallbackAsset: DownloadAsset = {
-    name: 'iris-v0.1.4-macos-arm64.zip',
-    href: `${releaseBaseUrl}/assets/iris-v0.1.4-macos-arm64.zip`,
+    name: 'iris-v0.1.5-macos-arm64.zip',
+    href: `${releaseBaseUrl}/assets/iris-v0.1.5-macos-arm64.zip`,
     label: 'Mac (Apple Silicon)',
     ctaLabel: 'Download for Mac',
-    size: 20_744_558,
+    size: 20_744_734,
     sizeLabel: '19.8 MB',
     platform: 'mac',
     arch: 'arm64',
     priority: 50,
+    variantKey: 'mac-arm64-zip',
   };
 
   const screenshots: Screenshot[] = [
@@ -294,6 +310,7 @@
         platform: 'mac',
         arch: 'arm64',
         priority: 50,
+        variantKey: 'mac-arm64-zip',
       };
     }
 
@@ -304,6 +321,7 @@
         platform: 'windows',
         arch: 'x64',
         priority: 40,
+        variantKey: 'windows-x64-exe',
       };
     }
 
@@ -314,6 +332,7 @@
         platform: 'windows',
         arch: 'arm64',
         priority: 39,
+        variantKey: 'windows-arm64-exe',
       };
     }
 
@@ -324,6 +343,7 @@
         platform: 'linux',
         arch: 'x64',
         priority: 35,
+        variantKey: 'linux-x64-appimage',
       };
     }
 
@@ -334,6 +354,7 @@
         platform: 'linux',
         arch: 'arm64',
         priority: 34,
+        variantKey: 'linux-arm64-appimage',
       };
     }
 
@@ -344,6 +365,7 @@
         platform: 'linux',
         arch: 'x64',
         priority: 33,
+        variantKey: 'linux-x64-deb',
       };
     }
 
@@ -354,6 +376,7 @@
         platform: 'linux',
         arch: 'arm64',
         priority: 32,
+        variantKey: 'linux-arm64-deb',
       };
     }
 
@@ -363,6 +386,18 @@
       platform: 'unknown',
       arch: 'unknown',
       priority: 0,
+      variantKey: `name:${name.toLowerCase()}`,
+    };
+  }
+
+  function buildDownloadAsset(name: string, href: string, size: number): DownloadAsset {
+    const described = describeAsset(name);
+    return {
+      name,
+      href,
+      size,
+      sizeLabel: formatSize(size),
+      ...described,
     };
   }
 
@@ -423,6 +458,16 @@
     return [...assets].sort((left, right) => scoreAsset(right) - scoreAsset(left));
   }
 
+  function dedupeAssets(assets: DownloadAsset[]) {
+    const deduped = new Map<string, DownloadAsset>();
+    for (const asset of assets) {
+      if (!deduped.has(asset.variantKey)) {
+        deduped.set(asset.variantKey, asset);
+      }
+    }
+    return [...deduped.values()];
+  }
+
   function syncPrimaryDownload(assets: DownloadAsset[]) {
     const sorted = sortAssets(assets);
     primaryDownload = sorted[0] ?? fallbackAsset;
@@ -430,7 +475,7 @@
 
   function downloadNote() {
     if (releaseAssets.length > 1) {
-      return 'The main button picks the best match for this device.';
+      return 'The main button picks the best match for this device. More options are below.';
     }
 
     if (primaryDownload.platform === 'mac') {
@@ -448,35 +493,75 @@
     return 'More downloads can show up here as they are released.';
   }
 
-  onMount(async () => {
-    try {
-      const response = await fetch(releaseManifestUrl, { cache: 'no-store' });
-      if (!response.ok) {
-        throw new Error(`Release manifest request failed with ${response.status}`);
+  function githubReleaseApiUrl(tag?: string | null) {
+    if (tag?.trim()) {
+      return `https://api.github.com/repos/${githubRepo}/releases/tags/${encodeURIComponent(tag.trim())}`;
+    }
+    return `https://api.github.com/repos/${githubRepo}/releases/latest`;
+  }
+
+  onMount(() => {
+    let cancelled = false;
+
+    async function loadReleaseAssets() {
+      let manifestTag = '';
+      let manifestAssets: DownloadAsset[] = [];
+
+      try {
+        const response = await fetch(releaseManifestUrl, { cache: 'no-store' });
+        if (!response.ok) {
+          throw new Error(`Release manifest request failed with ${response.status}`);
+        }
+
+        const manifest = await response.json() as {
+          tag?: string;
+          assets?: ReleaseManifestAsset[];
+        };
+
+        manifestTag = manifest.tag?.trim() ?? '';
+        manifestAssets = (manifest.assets ?? []).map((asset) =>
+          buildDownloadAsset(asset.name, `${releaseBaseUrl}/${asset.path}`, asset.size),
+        );
+      } catch (error) {
+        console.warn('[browser-site] failed to load htree release manifest', error);
       }
 
-      const manifest = await response.json() as {
-        assets?: Array<{ name: string; path: string; size: number }>;
-      };
+      let githubAssets: DownloadAsset[] = [];
 
-      const assets = (manifest.assets ?? []).map((asset) => {
-        const described = describeAsset(asset.name);
-        return {
-          name: asset.name,
-          href: `${releaseBaseUrl}/${asset.path}`,
-          size: asset.size,
-          sizeLabel: formatSize(asset.size),
-          ...described,
-        } satisfies DownloadAsset;
-      });
+      try {
+        const response = await fetch(githubReleaseApiUrl(manifestTag), {
+          cache: 'no-store',
+          headers: {
+            accept: 'application/vnd.github+json',
+          },
+        });
+        if (!response.ok) {
+          throw new Error(`GitHub release request failed with ${response.status}`);
+        }
 
-      if (assets.length > 0) {
+        const release = await response.json() as {
+          assets?: GithubReleaseAsset[];
+        };
+
+        githubAssets = (release.assets ?? [])
+          .filter((asset) => asset.state === 'uploaded' && !!asset.browser_download_url)
+          .map((asset) => buildDownloadAsset(asset.name, asset.browser_download_url!, asset.size));
+      } catch (error) {
+        console.warn('[browser-site] failed to load GitHub release assets', error);
+      }
+
+      const assets = dedupeAssets([...manifestAssets, ...githubAssets]);
+      if (!cancelled && assets.length > 0) {
         releaseAssets = assets;
         syncPrimaryDownload(assets);
       }
-    } catch (error) {
-      console.warn('[browser-site] failed to load release manifest', error);
     }
+
+    void loadReleaseAssets();
+
+    return () => {
+      cancelled = true;
+    };
   });
 
   $effect(() => {
@@ -526,7 +611,7 @@
               aria-expanded={showAllDownloads}
               onclick={() => (showAllDownloads = !showAllDownloads)}
             >
-              {showAllDownloads ? 'Hide downloads' : 'All downloads'}
+              {showAllDownloads ? 'Hide options' : 'More options'}
             </button>
           {/if}
         </div>
