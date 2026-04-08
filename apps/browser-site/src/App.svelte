@@ -7,6 +7,7 @@
   const releaseBaseUrl =
     'https://upload.iris.to/npub1xdhnr9mrv47kkrn95k6cwecearydeh8e895990n3acntwvmgk2dsdeeycm/releases%2Firis-browser/latest';
   const releaseManifestUrl = `${releaseBaseUrl}/release.json`;
+
   type DownloadAsset = {
     name: string;
     href: string;
@@ -17,6 +18,13 @@
     platform: 'mac' | 'windows' | 'linux' | 'unknown';
     arch: 'arm64' | 'x64' | 'unknown';
     priority: number;
+  };
+
+  type Screenshot = {
+    src: string;
+    alt: string;
+    title: string;
+    body: string;
   };
 
   const fallbackAsset: DownloadAsset = {
@@ -31,70 +39,50 @@
     priority: 50,
   };
 
-  let current = $state(0);
-  let releaseAssets = $state<DownloadAsset[]>([fallbackAsset]);
-  let primaryDownload = $state<DownloadAsset>(fallbackAsset);
-  let showAllDownloads = $state(false);
+  const screenshots: Screenshot[] = [
+    {
+      src: `${baseUrl}browser-home.jpg`,
+      alt: 'Iris Browser home screen with favorites and suggestions',
+      title: 'A calm place to start',
+      body: 'Favorites, recent places, and useful suggestions stay close at hand.',
+    },
+    {
+      src: `${baseUrl}browser-jumble.jpg`,
+      alt: 'Iris Browser opening a shared website',
+      title: 'Shared websites feel like real places',
+      body: 'A site someone sends you can stay useful instead of disappearing into chat history.',
+    },
+    {
+      src: `${baseUrl}browser-permission.jpg`,
+      alt: 'Iris Browser asking before a website uses your account',
+      title: 'You stay in control',
+      body: 'If a website wants your account, Iris asks first instead of assuming yes.',
+    },
+  ];
 
-  const sellingPoints = [
+  const checklist = [
     'Publish websites for free',
-    'Save websites to offline mode',
+    'Keep websites ready offline',
     'Share to nearby devices over Wi-Fi',
     'Send files without the usual friction',
     'Skip email, phone, and extra accounts',
   ];
 
-  const benefits = [
-    {
-      title: 'Publish websites for free',
-      body:
-        'Publish a website without handing it over to a giant platform or paying for hosting just to get started.',
-    },
-    {
-      title: 'Save websites to offline mode',
-      body:
-        'Keep a website ready to open even when your connection gets weak, slow, or disappears.',
-    },
-    {
-      title: 'Share to nearby devices',
-      body:
-        'Send a website straight to phones and laptops around you over Wi-Fi, without bouncing through somebody else first.',
-    },
-    {
-      title: 'Effortless file sharing',
-      body:
-        'Move files from one device to another without digging through links, inboxes, or cloud drives.',
-    },
-    {
-      title: 'No extra accounts required',
-      body:
-        'People should not need a third-party email, phone number, or signup just to open and use a website.',
-    },
-  ];
-
-  const gallery = [
-    {
-      src: `${baseUrl}browser-home.jpg`,
-      alt: 'Iris Browser home screen with favorites and suggestions',
-      title: 'Start from a calm home screen',
-      body: 'Favorites, suggestions, and recent places stay close instead of getting lost.',
-    },
-    {
-      src: `${baseUrl}browser-jumble.jpg`,
-      alt: 'Iris Browser opening a shared website',
-      title: 'Open shared websites like real apps',
-      body: 'A link from someone else can open cleanly instead of feeling disposable.',
-    },
-    {
-      src: `${baseUrl}browser-permission.jpg`,
-      alt: 'Iris Browser showing an account access prompt',
-      title: 'Account access stays explicit',
-      body: 'If a website wants to use your account, Iris puts the choice in front of you.',
-    },
-  ];
+  let current = $state(0);
+  let releaseAssets = $state<DownloadAsset[]>([fallbackAsset]);
+  let primaryDownload = $state<DownloadAsset>(fallbackAsset);
+  let showAllDownloads = $state(false);
 
   function go(index: number) {
-    current = (index + gallery.length) % gallery.length;
+    current = (index + screenshots.length) % screenshots.length;
+  }
+
+  function prev() {
+    go(current - 1);
+  }
+
+  function next() {
+    go(current + 1);
   }
 
   function formatSize(size: number): string {
@@ -177,8 +165,10 @@
       };
     };
 
-    const platformSource = `${navigatorWithData.userAgentData?.platform ?? ''} ${navigator.platform ?? ''} ${navigator.userAgent}`.toLowerCase();
-    const archSource = `${navigatorWithData.userAgentData?.architecture ?? ''} ${navigator.userAgent}`.toLowerCase();
+    const platformSource =
+      `${navigatorWithData.userAgentData?.platform ?? ''} ${navigator.platform ?? ''} ${navigator.userAgent}`.toLowerCase();
+    const archSource =
+      `${navigatorWithData.userAgentData?.architecture ?? ''} ${navigator.userAgent}`.toLowerCase();
 
     const platform = platformSource.includes('mac')
       ? 'mac'
@@ -227,10 +217,10 @@
 
   function downloadNote() {
     if (releaseAssets.length > 1) {
-      return 'The button above picks the best match we have for this device.';
+      return 'The main button picks the best match for this device.';
     }
 
-    return 'Apple Silicon Macs for now. More downloads can appear here later.';
+    return 'Mac download for now. More options can appear here later.';
   }
 
   onMount(async () => {
@@ -269,44 +259,28 @@
   <title>browser.iris.to | Iris Browser</title>
   <meta
     name="description"
-    content="A better internet is here: publish websites for free, save them to offline mode, share nearby, and skip extra accounts."
+    content="Publish websites for free, keep them ready offline, share them nearby, and skip extra accounts."
   />
 </svelte:head>
 
 <div class="site-shell">
-  <div class="backdrop backdrop-a"></div>
-  <div class="backdrop backdrop-b"></div>
-
-  <header class="topbar">
-    <a class="brand" href={sourceUrl}>
-      Iris Browser
-    </a>
-    <a class="toplink" href="#screenshots">Screenshots</a>
-  </header>
-
   <main class="content">
     <section class="hero">
-      <div class="hero-copy">
-        <p class="eyebrow">browser.iris.to</p>
-        <h1>A better internet is here.</h1>
+      <div class="copy">
+        <h1>Websites should work anywhere.</h1>
         <p class="lede">
-          Publish websites for free, save them to offline mode, send them to nearby devices,
-          share files easily, and skip the usual account maze.
+          Iris Browser makes websites easier to keep, share, and open, even when the connection
+          is weak or the usual platforms get in the way.
         </p>
 
         <div class="actions">
-          <a class="button button-primary" href={primaryDownload.href}>
+          <a class="button primary" href={primaryDownload.href}>
             {primaryDownload.ctaLabel}
           </a>
-          <a class="button button-secondary" href="#benefits">Why it matters</a>
-        </div>
-
-        <div class="download-meta">
-          <p class="download-note">{downloadNote()}</p>
           {#if releaseAssets.length > 1}
             <button
               type="button"
-              class="downloads-toggle"
+              class="button secondary"
               aria-expanded={showAllDownloads}
               onclick={() => (showAllDownloads = !showAllDownloads)}
             >
@@ -315,334 +289,241 @@
           {/if}
         </div>
 
+        <p class="download-note">{downloadNote()}</p>
+
         {#if showAllDownloads && releaseAssets.length > 1}
           <div class="download-list">
-            {#each releaseAssets as asset}
+            {#each sortAssets(releaseAssets) as asset}
               <a class="download-item" href={asset.href}>
-                <span class="download-item-name">{asset.label}</span>
-                <span class="download-item-size">{asset.sizeLabel}</span>
+                <span class="download-label">{asset.label}</span>
+                <span class="download-size">{asset.sizeLabel || 'Download'}</span>
               </a>
             {/each}
           </div>
         {/if}
 
-        <div class="pill-row">
-          {#each sellingPoints as point}
-            <span class="pill">{point}</span>
-          {/each}
-        </div>
       </div>
 
-      <div id="screenshots" class="hero-gallery">
-        <div class="gallery-topline">
-          <p class="section-label">Screenshots</p>
-          <div class="gallery-controls">
-            <button
-              type="button"
-              class="gallery-button"
-              aria-label="Previous screenshot"
-              onclick={() => go(current - 1)}
-            >
+      <section class="gallery" aria-label="Screenshots">
+        <div class="stage">
+          <img
+            class="hero-shot"
+            src={screenshots[current].src}
+            alt={screenshots[current].alt}
+            loading="eager"
+          />
+
+          <div class="gallery-nav">
+            <button type="button" class="nav-button" onclick={prev} aria-label="Previous screenshot">
               Prev
             </button>
-            <button
-              type="button"
-              class="gallery-button"
-              aria-label="Next screenshot"
-              onclick={() => go(current + 1)}
-            >
+            <button type="button" class="nav-button" onclick={next} aria-label="Next screenshot">
               Next
             </button>
           </div>
         </div>
 
-        <div class="carousel-viewport">
-          <div class="carousel-track" style={`transform: translateX(calc(-${current} * (100% + 1rem)));`}>
-            {#each gallery as shot}
-              <figure class="gallery-card">
-                <div class="shot-frame">
-                  <img src={shot.src} alt={shot.alt} />
-                </div>
-                <figcaption>
-                  <h2>{shot.title}</h2>
-                  <p>{shot.body}</p>
-                </figcaption>
-              </figure>
-            {/each}
-          </div>
+        <div class="caption">
+          <h2>{screenshots[current].title}</h2>
+          <p>{screenshots[current].body}</p>
         </div>
 
-        <div class="thumb-row">
-          {#each gallery as shot, index}
+        <div class="thumbnails" aria-label="Choose screenshot">
+          {#each screenshots as screenshot, index}
             <button
               type="button"
-              class:thumb-active={index === current}
+              class:active={index === current}
               class="thumb"
-              aria-label={`Show ${shot.title}`}
+              aria-label={`Show screenshot ${index + 1}: ${screenshot.title}`}
               aria-pressed={index === current}
               onclick={() => go(index)}
             >
-              <img src={shot.src} alt="" />
-              <span>{shot.title}</span>
+              <img src={screenshot.src} alt="" loading="lazy" />
             </button>
           {/each}
         </div>
-      </div>
-    </section>
+      </section>
 
-    <section id="benefits" class="benefit-section">
-      <div class="section-copy">
-        <p class="section-label">Why It Matters</p>
-        <h3>Websites should stay useful when you are offline, nearby, and sharing.</h3>
-      </div>
-
-      <div class="benefit-grid">
-        {#each benefits as benefit}
-          <article class="benefit-card">
-            <p class="card-kicker">{benefit.title}</p>
-            <p>{benefit.body}</p>
-          </article>
+      <ul class="checklist">
+        {#each checklist as item}
+          <li>{item}</li>
         {/each}
-      </div>
+      </ul>
     </section>
-
-    <footer class="site-footer">
-      <a href={sourceUrl}>Source</a>
-    </footer>
   </main>
+
+  <footer class="footer">
+    <a href={sourceUrl}>Source</a>
+  </footer>
 </div>
 
 <style>
-  :global(html) {
-    scroll-behavior: smooth;
+  :global(:root) {
+    color-scheme: light dark;
+    --page-bg: #f5f7f8;
+    --page-glow: rgba(56, 110, 191, 0.12);
+    --surface: rgba(255, 255, 255, 0.88);
+    --surface-strong: #ffffff;
+    --border: rgba(22, 38, 54, 0.12);
+    --text-1: #102033;
+    --text-2: #587083;
+    --accent: #1f78f0;
+    --accent-strong: #155fc4;
+    --accent-soft: rgba(31, 120, 240, 0.12);
+    --shadow: 0 24px 60px rgba(16, 32, 51, 0.08);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :global(:root) {
+      --page-bg: #0b1116;
+      --page-glow: rgba(94, 165, 255, 0.14);
+      --surface: rgba(18, 27, 35, 0.84);
+      --surface-strong: #121b23;
+      --border: rgba(191, 214, 235, 0.14);
+      --text-1: #edf4fb;
+      --text-2: #9db0c2;
+      --accent: #77b0ff;
+      --accent-strong: #9cc7ff;
+      --accent-soft: rgba(119, 176, 255, 0.18);
+      --shadow: 0 28px 70px rgba(0, 0, 0, 0.28);
+    }
+  }
+
+  :global(html, body, #app) {
+    min-height: 100%;
   }
 
   :global(body) {
     margin: 0;
-    min-height: 100vh;
     background:
-      radial-gradient(circle at top, rgba(255, 183, 77, 0.12), transparent 26%),
-      linear-gradient(180deg, #f5ecdf 0%, #eadcc7 52%, #f4ece0 100%);
-    color: #24180f;
-    font-family: 'Avenir Next', 'Segoe UI', 'Helvetica Neue', sans-serif;
+      radial-gradient(circle at top center, var(--page-glow), transparent 34%),
+      var(--page-bg);
+    color: var(--text-1);
+    font-family:
+      ui-sans-serif,
+      system-ui,
+      -apple-system,
+      BlinkMacSystemFont,
+      'Segoe UI',
+      sans-serif;
   }
 
   :global(a) {
     color: inherit;
-    text-decoration: none;
-  }
-
-  :global(img) {
-    display: block;
-    max-width: 100%;
   }
 
   .site-shell {
-    position: relative;
-    overflow: hidden;
     min-height: 100vh;
+    display: flex;
+    flex-direction: column;
   }
 
-  .backdrop {
-    position: absolute;
-    inset: auto auto 0 0;
-    border-radius: 999px;
-    filter: blur(18px);
-    opacity: 0.42;
-    pointer-events: none;
-  }
-
-  .backdrop-a {
-    width: 22rem;
-    height: 22rem;
-    right: -6rem;
-    top: 6rem;
-    background: radial-gradient(circle, rgba(255, 126, 95, 0.32), transparent 68%);
-    animation: drift 14s ease-in-out infinite;
-  }
-
-  .backdrop-b {
-    width: 28rem;
-    height: 28rem;
-    left: -10rem;
-    bottom: -9rem;
-    background: radial-gradient(circle, rgba(255, 205, 116, 0.28), transparent 72%);
-    animation: drift 18s ease-in-out infinite reverse;
-  }
-
-  .topbar,
-  .content {
-    position: relative;
-    z-index: 1;
-    width: min(1180px, calc(100% - 2rem));
+  .content,
+  .footer {
+    width: min(1120px, calc(100vw - 2rem));
     margin: 0 auto;
   }
 
-  .topbar {
+  .content {
+    flex: 1;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    padding: 1.25rem 0 0;
-  }
-
-  .brand,
-  .toplink {
-    font-size: 0.95rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-
-  .brand {
-    color: #5a3618;
-  }
-
-  .toplink {
-    color: rgba(36, 24, 15, 0.74);
-  }
-
-  .content {
-    padding: 3rem 0 4rem;
-  }
-
-  .hero-copy,
-  .hero-gallery,
-  .section-copy,
-  .benefit-card {
-    animation: rise 0.7s ease-out both;
+    padding: 1.4rem 0 2.5rem;
   }
 
   .hero {
     display: grid;
-    grid-template-columns: minmax(0, 0.86fr) minmax(0, 1.14fr);
-    gap: 1.35rem;
-    align-items: start;
+    grid-template-columns: minmax(0, 1fr) minmax(320px, 0.95fr);
+    grid-template-areas:
+      'copy gallery'
+      'checklist gallery';
+    gap: 2rem;
+    width: 100%;
+    align-items: center;
   }
 
-  .eyebrow,
-  .section-label,
-  .card-kicker {
-    margin: 0 0 0.75rem;
-    color: #8d451c;
-    font-size: 0.78rem;
-    font-weight: 800;
-    letter-spacing: 0.16em;
-    text-transform: uppercase;
-  }
-
-  h1,
-  h2,
-  h3,
-  p {
-    margin: 0;
+  .copy {
+    grid-area: copy;
+    max-width: 34rem;
   }
 
   h1 {
-    max-width: 10ch;
-    color: #23170f;
-    font-size: clamp(3rem, 6.5vw, 5rem);
-    line-height: 0.94;
-    letter-spacing: -0.06em;
-  }
-
-  h2 {
-    font-size: 1.18rem;
-    line-height: 1.1;
-    letter-spacing: -0.03em;
-  }
-
-  h3 {
-    max-width: 18ch;
-    font-size: clamp(2rem, 4vw, 3rem);
-    line-height: 1;
+    margin: 0;
+    font-size: clamp(3.1rem, 6vw, 5.3rem);
+    line-height: 0.93;
     letter-spacing: -0.05em;
+    text-wrap: balance;
   }
 
   .lede {
-    max-width: 34rem;
-    margin-top: 1.15rem;
-    color: rgba(36, 24, 15, 0.78);
-    font-size: 1.08rem;
-    line-height: 1.6;
+    margin: 1.2rem 0 0;
+    max-width: 32rem;
+    color: var(--text-2);
+    font-size: 1.1rem;
+    line-height: 1.65;
   }
 
   .actions {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.9rem;
-    margin-top: 1.65rem;
+    gap: 0.85rem;
+    margin: 1.8rem 0 0;
   }
 
   .button {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-height: 3rem;
-    padding: 0 1.15rem;
+    min-height: 3.25rem;
+    padding: 0.85rem 1.15rem;
     border-radius: 999px;
-    border: 1px solid transparent;
+    border: 1px solid var(--border);
     font-size: 0.98rem;
-    font-weight: 700;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
     transition:
-      transform 160ms ease,
-      background 160ms ease,
-      border-color 160ms ease;
+      transform 140ms ease,
+      border-color 140ms ease,
+      background-color 140ms ease;
   }
 
   .button:hover {
     transform: translateY(-1px);
   }
 
-  .button-primary {
-    background: #16110b;
-    color: #fff5eb;
-    box-shadow: 0 14px 30px rgba(22, 17, 11, 0.16);
+  .button.primary {
+    border-color: transparent;
+    background: var(--accent);
+    color: #fff;
   }
 
-  .button-secondary {
-    border-color: rgba(36, 24, 15, 0.14);
-    background: rgba(255, 255, 255, 0.6);
-    color: #24180f;
+  .button.primary:hover {
+    background: var(--accent-strong);
   }
 
-  .pill-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.7rem;
-    margin-top: 1.5rem;
+  .button.secondary {
+    background: var(--surface);
+    color: var(--text-1);
+    box-shadow: var(--shadow);
   }
 
   .download-note {
-    color: rgba(36, 24, 15, 0.64);
+    margin: 0.85rem 0 0;
+    color: var(--text-2);
     font-size: 0.92rem;
-  }
-
-  .download-meta {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 0.85rem;
-    margin-top: 0.85rem;
-  }
-
-  .downloads-toggle {
-    padding: 0;
-    border: 0;
-    background: transparent;
-    color: #8d451c;
-    font: inherit;
-    font-size: 0.92rem;
-    font-weight: 700;
-    cursor: pointer;
-    text-decoration: underline;
-    text-underline-offset: 0.18em;
+    line-height: 1.5;
   }
 
   .download-list {
     display: grid;
-    gap: 0.6rem;
-    margin-top: 0.9rem;
+    gap: 0.75rem;
+    margin-top: 1rem;
+    padding: 1rem;
+    border: 1px solid var(--border);
+    border-radius: 1.4rem;
+    background: var(--surface);
+    box-shadow: var(--shadow);
   }
 
   .download-item {
@@ -650,283 +531,233 @@
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
-    padding: 0.9rem 1rem;
+    padding: 0.85rem 1rem;
     border-radius: 1rem;
-    background: rgba(255, 255, 255, 0.56);
-    border: 1px solid rgba(36, 24, 15, 0.08);
+    background: var(--surface-strong);
+    text-decoration: none;
   }
 
-  .download-item-name {
-    font-weight: 700;
+  .download-label {
+    font-weight: 600;
   }
 
-  .download-item-size {
-    color: rgba(36, 24, 15, 0.6);
+  .download-size {
+    color: var(--text-2);
     font-size: 0.9rem;
+    white-space: nowrap;
   }
 
-  .pill {
-    display: inline-flex;
-    align-items: center;
-    min-height: 2rem;
-    padding: 0 0.85rem;
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.68);
-    border: 1px solid rgba(36, 24, 15, 0.08);
-    color: rgba(36, 24, 15, 0.72);
-    font-size: 0.88rem;
+  .checklist {
+    grid-area: checklist;
+    align-self: start;
+    list-style: none;
+    padding: 0;
+    margin: 0.25rem 0 0;
+    border-top: 1px solid var(--border);
   }
 
-  .hero-gallery {
-    min-width: 0;
-    padding: 0.95rem;
-    border-radius: 1.8rem;
-    background: rgba(255, 255, 255, 0.72);
-    border: 1px solid rgba(36, 24, 15, 0.08);
-    box-shadow: 0 18px 40px rgba(98, 64, 21, 0.08);
-  }
-
-  .gallery-topline {
+  .checklist li {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
+    gap: 0.9rem;
+    padding: 0.95rem 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 1rem;
+    font-weight: 500;
+    line-height: 1.4;
   }
 
-  .gallery-topline .section-label {
-    margin-bottom: 0;
-  }
-
-  .gallery-controls {
-    display: flex;
-    gap: 0.55rem;
-  }
-
-  .gallery-button {
-    min-height: 2.4rem;
-    padding: 0 0.95rem;
-    border: 1px solid rgba(36, 24, 15, 0.1);
-    border-radius: 999px;
-    background: rgba(255, 255, 255, 0.7);
-    color: #24180f;
-    font: inherit;
-    font-size: 0.88rem;
-    font-weight: 700;
-    cursor: pointer;
-  }
-
-  .carousel-viewport {
-    overflow: hidden;
-    margin-top: 0.9rem;
-  }
-
-  .carousel-track {
-    display: flex;
-    gap: 1rem;
-    transition: transform 220ms ease;
-    will-change: transform;
-  }
-
-  .gallery-card {
-    min-width: 100%;
-    margin: 0;
-  }
-
-  .shot-frame {
-    position: relative;
-    overflow: hidden;
-    border-radius: 1.3rem;
-    background: rgba(15, 10, 7, 0.92);
-    padding: 0.65rem;
-    box-shadow:
-      0 24px 70px rgba(53, 31, 8, 0.16),
-      inset 0 0 0 1px rgba(255, 255, 255, 0.08);
-  }
-
-  .shot-frame::before {
+  .checklist li::before {
     content: '';
+    width: 0.72rem;
+    height: 0.72rem;
+    border-radius: 999px;
+    background: var(--accent);
+    box-shadow: 0 0 0 0.28rem var(--accent-soft);
+    flex: none;
+  }
+
+  .gallery {
+    grid-area: gallery;
+    padding: 1rem;
+    border: 1px solid var(--border);
+    border-radius: 2rem;
+    background: var(--surface);
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(18px);
+  }
+
+  .stage {
+    position: relative;
+  }
+
+  .hero-shot {
+    display: block;
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+    border-radius: 1.45rem;
+    background: var(--surface-strong);
+  }
+
+  .gallery-nav {
     position: absolute;
-    inset: 0.65rem;
-    border-radius: 0.95rem;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    inset: auto 0 1rem 0;
+    display: flex;
+    justify-content: space-between;
+    padding: 0 1rem;
     pointer-events: none;
   }
 
-  .shot-frame img {
-    width: 100%;
-    border-radius: 0.95rem;
-    box-shadow: 0 12px 36px rgba(0, 0, 0, 0.34);
+  .nav-button {
+    pointer-events: auto;
+    min-height: 2.4rem;
+    padding: 0.55rem 0.9rem;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--surface-strong) 82%, transparent);
+    color: var(--text-1);
+    font-size: 0.84rem;
+    font-weight: 700;
+    cursor: pointer;
+    backdrop-filter: blur(12px);
   }
 
-  figcaption {
-    margin-top: 0.9rem;
+  .caption {
+    padding: 1.15rem 0.35rem 0;
   }
 
-  figcaption p {
-    margin-top: 0.55rem;
-    color: rgba(36, 24, 15, 0.76);
-    line-height: 1.55;
+  .caption h2 {
+    margin: 0;
+    font-size: 1.35rem;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
   }
 
-  .thumb-row {
+  .caption p {
+    margin: 0.55rem 0 0;
+    color: var(--text-2);
+    font-size: 0.98rem;
+    line-height: 1.6;
+  }
+
+  .thumbnails {
     display: grid;
-    gap: 0.8rem;
-    margin-top: 0.9rem;
     grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.75rem;
+    margin-top: 1rem;
   }
 
   .thumb {
-    display: grid;
-    gap: 0.55rem;
-    padding: 0.45rem;
-    border: 1px solid rgba(36, 24, 15, 0.08);
+    padding: 0.3rem;
+    border: 1px solid transparent;
     border-radius: 1rem;
-    background: rgba(255, 255, 255, 0.55);
-    color: #24180f;
-    text-align: left;
-    font: inherit;
+    background: transparent;
     cursor: pointer;
     transition:
-      transform 160ms ease,
-      border-color 160ms ease,
-      background 160ms ease;
+      transform 140ms ease,
+      border-color 140ms ease,
+      background-color 140ms ease;
   }
 
   .thumb:hover {
     transform: translateY(-1px);
   }
 
+  .thumb.active {
+    border-color: var(--accent);
+    background: var(--accent-soft);
+  }
+
   .thumb img {
+    display: block;
     width: 100%;
-    border-radius: 0.75rem;
+    aspect-ratio: 16 / 10;
+    object-fit: cover;
+    border-radius: 0.8rem;
   }
 
-  .thumb span {
-    padding: 0 0.2rem 0.15rem;
-    font-size: 0.86rem;
-    font-weight: 700;
-    line-height: 1.25;
+  .footer {
+    display: flex;
+    justify-content: flex-end;
+    padding: 0 0 1.5rem;
   }
 
-  .thumb-active {
-    border-color: rgba(141, 69, 28, 0.32);
-    background: rgba(255, 255, 255, 0.86);
-    box-shadow: 0 12px 30px rgba(98, 64, 21, 0.08);
-  }
-
-  .benefit-section {
-    margin-top: 3rem;
-  }
-
-  .site-footer {
-    margin-top: 2rem;
-    padding-top: 1rem;
-    color: rgba(36, 24, 15, 0.68);
+  .footer a {
+    color: var(--text-2);
+    text-decoration: none;
     font-size: 0.95rem;
+    font-weight: 500;
   }
 
-  .site-footer a {
-    text-decoration: underline;
-    text-underline-offset: 0.18em;
+  .footer a:hover {
+    color: var(--text-1);
   }
 
-  .section-copy p:last-child {
-    max-width: 40rem;
-    margin-top: 1rem;
-  }
-
-  .benefit-grid {
-    display: grid;
-    gap: 1rem;
-    margin-top: 1.35rem;
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-  }
-
-  .benefit-card {
-    padding: 1.25rem;
-    border-radius: 1.4rem;
-    background: rgba(255, 255, 255, 0.74);
-    border: 1px solid rgba(36, 24, 15, 0.08);
-    box-shadow: 0 18px 40px rgba(98, 64, 21, 0.08);
-  }
-
-  .benefit-card p:last-child {
-    color: rgba(36, 24, 15, 0.76);
-    line-height: 1.6;
-  }
-
-  @keyframes rise {
-    from {
-      opacity: 0;
-      transform: translateY(18px);
+  @media (max-width: 940px) {
+    .content {
+      align-items: flex-start;
+      padding-top: 1.4rem;
     }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
 
-  @keyframes drift {
-    0%,
-    100% {
-      transform: translate3d(0, 0, 0);
-    }
-    50% {
-      transform: translate3d(0, -14px, 0);
-    }
-  }
-
-  @media (max-width: 1100px) {
-    .hero,
-    .benefit-grid {
+    .hero {
       grid-template-columns: 1fr;
+      grid-template-areas:
+        'copy'
+        'gallery'
+        'checklist';
+      gap: 1.5rem;
     }
 
-    h1,
-    h3 {
+    .copy {
       max-width: none;
     }
   }
 
-  @media (max-width: 720px) {
-    .topbar {
-      padding-top: 1rem;
+  @media (max-width: 640px) {
+    .content,
+    .footer {
+      width: min(100vw - 1.25rem, 1120px);
     }
 
     .content {
-      padding-top: 2.4rem;
+      padding-top: 0.9rem;
+      padding-bottom: 1.5rem;
     }
 
     h1 {
-      font-size: clamp(2.6rem, 12vw, 4rem);
+      font-size: clamp(2.7rem, 14vw, 4rem);
     }
 
-    .hero-gallery,
-    .benefit-grid {
-      grid-template-columns: 1fr;
+    .lede {
+      font-size: 1rem;
     }
 
-    .thumb-row {
-      grid-template-columns: 1fr;
+    .gallery {
+      padding: 0.8rem;
+      border-radius: 1.6rem;
     }
 
-    .hero-gallery,
-    .benefit-card {
-      border-radius: 1.3rem;
+    .hero-shot {
+      border-radius: 1.15rem;
     }
 
-    .shot-frame {
-      border-radius: 1.1rem;
-      padding: 0.55rem;
+    .caption {
+      padding-left: 0.15rem;
+      padding-right: 0.15rem;
     }
 
-    .shot-frame::before {
-      inset: 0.55rem;
-      border-radius: 0.8rem;
+    .caption h2 {
+      font-size: 1.15rem;
     }
 
-    .shot-frame img {
-      border-radius: 0.8rem;
+    .thumbnails {
+      gap: 0.5rem;
+    }
+
+    .footer {
+      justify-content: flex-start;
+      padding-bottom: 1.2rem;
     }
   }
 </style>
