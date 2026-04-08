@@ -27,6 +27,13 @@
     body: string;
   };
 
+  type Benefit = {
+    title: string;
+    body: string;
+    icon: 'globe' | 'download' | 'wifi' | 'share' | 'user';
+    tone: 'blue' | 'green' | 'amber' | 'violet' | 'rose';
+  };
+
   const fallbackAsset: DownloadAsset = {
     name: 'iris-v0.1.4-macos-arm64.zip',
     href: `${releaseBaseUrl}/assets/iris-v0.1.4-macos-arm64.zip`,
@@ -41,40 +48,84 @@
 
   const screenshots: Screenshot[] = [
     {
-      src: `${baseUrl}browser-home.jpg`,
+      src: `${baseUrl}browser-home.png`,
       alt: 'Iris Browser home screen with favorites and suggestions',
       title: 'A calm place to start',
-      body: 'Favorites, recent places, and useful suggestions stay close at hand.',
+      body: 'Favorites and useful places stay close instead of getting buried.',
     },
     {
-      src: `${baseUrl}browser-jumble.jpg`,
+      src: `${baseUrl}browser-jumble.png`,
       alt: 'Iris Browser opening a shared website',
-      title: 'Shared websites feel like real places',
-      body: 'A site someone sends you can stay useful instead of disappearing into chat history.',
+      title: 'Shared websites feel easy to revisit',
+      body: 'A site someone sends you does not have to disappear into chat history.',
     },
     {
-      src: `${baseUrl}browser-permission.jpg`,
+      src: `${baseUrl}browser-permission.png`,
       alt: 'Iris Browser asking before a website uses your account',
       title: 'You stay in control',
-      body: 'If a website wants your account, Iris asks first instead of assuming yes.',
+      body: 'If a website wants your account, Iris asks first.',
     },
   ];
 
-  const checklist = [
-    'Publish websites for free',
-    'Keep websites ready offline',
-    'Share to nearby devices over Wi-Fi',
-    'Send files without the usual friction',
-    'Skip email, phone, and extra accounts',
+  const benefits: Benefit[] = [
+    {
+      title: 'Publish websites for free',
+      body: 'Share a page without paying for hosting or leaning on a big platform.',
+      icon: 'globe',
+      tone: 'blue',
+    },
+    {
+      title: 'Save websites for offline use',
+      body: 'Keep useful pages ready for later, even when the signal drops.',
+      icon: 'download',
+      tone: 'green',
+    },
+    {
+      title: 'Share to nearby devices over Wi-Fi',
+      body: 'Pass a site or file across the room without sending it the long way around.',
+      icon: 'wifi',
+      tone: 'amber',
+    },
+    {
+      title: 'Send files without the usual friction',
+      body: 'Keep sharing simple instead of fighting upload steps and account walls.',
+      icon: 'share',
+      tone: 'violet',
+    },
+    {
+      title: 'Skip email, phone, and extra accounts',
+      body: 'People can open what you share without signing up for one more service first.',
+      icon: 'user',
+      tone: 'rose',
+    },
   ];
 
   let current = $state(0);
+  let dragOffset = $state(0);
+  let isDragging = $state(false);
   let releaseAssets = $state<DownloadAsset[]>([fallbackAsset]);
   let primaryDownload = $state<DownloadAsset>(fallbackAsset);
   let showAllDownloads = $state(false);
+  let autoInterval: ReturnType<typeof setInterval> | undefined;
+  let isHovered = $state(false);
+  let hasFocusWithin = $state(false);
+  let viewportEl: HTMLDivElement | null = null;
+
+  const axisLockThresholdPx = 8;
+  const swipeThresholdRatio = 0.25;
+  const minSwipeDistancePx = 24;
+  const velocityThresholdPxPerMs = 0.35;
+
+  let dragStartX = 0;
+  let dragStartY = 0;
+  let dragLastX = 0;
+  let dragLastAt = 0;
+  let velocityX = 0;
+  let dragAxis: 'unknown' | 'horizontal' | 'vertical' = 'unknown';
 
   function go(index: number) {
     current = (index + screenshots.length) % screenshots.length;
+    startAuto();
   }
 
   function prev() {
@@ -83,6 +134,148 @@
 
   function next() {
     go(current + 1);
+  }
+
+  function startAuto() {
+    stopAuto();
+    if (screenshots.length < 2 || isHovered || hasFocusWithin) return;
+    autoInterval = setInterval(() => {
+      current = (current + 1) % screenshots.length;
+    }, 5000);
+  }
+
+  function stopAuto() {
+    if (autoInterval) clearInterval(autoInterval);
+    autoInterval = undefined;
+  }
+
+  function clearDragState() {
+    dragStartX = 0;
+    dragStartY = 0;
+    dragLastX = 0;
+    dragLastAt = 0;
+    velocityX = 0;
+    dragAxis = 'unknown';
+  }
+
+  function beginDrag(x: number, y: number) {
+    isDragging = true;
+    dragOffset = 0;
+    clearDragState();
+    dragStartX = x;
+    dragStartY = y;
+    dragLastX = x;
+    dragLastAt = performance.now();
+    stopAuto();
+  }
+
+  function finishDrag() {
+    if (!isDragging) return;
+
+    isDragging = false;
+
+    const absDistance = Math.abs(dragOffset);
+    const contentWidth = viewportEl?.clientWidth ?? 1;
+    const swipeThreshold = Math.max(minSwipeDistancePx, contentWidth * swipeThresholdRatio);
+    const isQuickSwipe = Math.abs(velocityX) > velocityThresholdPxPerMs && absDistance > minSwipeDistancePx;
+    const shouldNavigate = dragAxis === 'horizontal' && (absDistance > swipeThreshold || isQuickSwipe);
+
+    let direction: 'prev' | 'next' = dragOffset > 0 ? 'prev' : 'next';
+    if (isQuickSwipe) {
+      direction = velocityX > 0 ? 'prev' : 'next';
+    }
+
+    dragOffset = 0;
+    clearDragState();
+
+    if (shouldNavigate) {
+      if (direction === 'prev') {
+        prev();
+      } else {
+        next();
+      }
+      return;
+    }
+
+    startAuto();
+  }
+
+  function onPointerDown(event: PointerEvent) {
+    if (screenshots.length < 2) return;
+    if (event.pointerType === 'mouse' && event.button !== 0) return;
+
+    viewportEl?.setPointerCapture(event.pointerId);
+    beginDrag(event.clientX, event.clientY);
+  }
+
+  function onPointerMove(event: PointerEvent) {
+    if (!isDragging) return;
+
+    const deltaX = event.clientX - dragStartX;
+    const deltaY = event.clientY - dragStartY;
+
+    if (
+      dragAxis === 'unknown' &&
+      (Math.abs(deltaX) > axisLockThresholdPx || Math.abs(deltaY) > axisLockThresholdPx)
+    ) {
+      dragAxis = Math.abs(deltaX) > Math.abs(deltaY) ? 'horizontal' : 'vertical';
+    }
+
+    if (dragAxis !== 'horizontal') return;
+
+    event.preventDefault();
+    dragOffset = deltaX;
+
+    const now = performance.now();
+    const dt = now - dragLastAt;
+    if (dt > 0) {
+      velocityX = (event.clientX - dragLastX) / dt;
+    }
+    dragLastX = event.clientX;
+    dragLastAt = now;
+  }
+
+  function onPointerUp(event: PointerEvent) {
+    if (viewportEl?.hasPointerCapture(event.pointerId)) {
+      viewportEl.releasePointerCapture(event.pointerId);
+    }
+    finishDrag();
+  }
+
+  function onPointerCancel(event: PointerEvent) {
+    if (viewportEl?.hasPointerCapture(event.pointerId)) {
+      viewportEl.releasePointerCapture(event.pointerId);
+    }
+    finishDrag();
+  }
+
+  function onGalleryMouseEnter() {
+    isHovered = true;
+    stopAuto();
+  }
+
+  function onGalleryMouseLeave() {
+    isHovered = false;
+    startAuto();
+  }
+
+  function onGalleryFocusIn() {
+    hasFocusWithin = true;
+    stopAuto();
+  }
+
+  function onGalleryFocusOut(event: FocusEvent) {
+    const currentTarget = event.currentTarget;
+    const relatedTarget = event.relatedTarget;
+    if (
+      currentTarget instanceof HTMLElement &&
+      relatedTarget instanceof Node &&
+      currentTarget.contains(relatedTarget)
+    ) {
+      return;
+    }
+    hasFocusWithin = false;
+    startAuto();
   }
 
   function formatSize(size: number): string {
@@ -134,13 +327,33 @@
       };
     }
 
+    if (/(linux-aarch64|linux-arm64)\.AppImage$/i.test(name)) {
+      return {
+        label: 'Linux AppImage (ARM)',
+        ctaLabel: 'Download for Linux',
+        platform: 'linux',
+        arch: 'arm64',
+        priority: 34,
+      };
+    }
+
     if (/linux-x86_64\.deb$/i.test(name)) {
       return {
         label: 'Linux .deb',
         ctaLabel: 'Download for Linux',
         platform: 'linux',
         arch: 'x64',
-        priority: 34,
+        priority: 33,
+      };
+    }
+
+    if (/(linux-aarch64|linux-arm64)\.deb$/i.test(name)) {
+      return {
+        label: 'Linux .deb (ARM)',
+        ctaLabel: 'Download for Linux',
+        platform: 'linux',
+        arch: 'arm64',
+        priority: 32,
       };
     }
 
@@ -220,7 +433,19 @@
       return 'The main button picks the best match for this device.';
     }
 
-    return 'Mac download for now. More options can appear here later.';
+    if (primaryDownload.platform === 'mac') {
+      return 'Mac available now. Windows and Linux can show up here as they are released.';
+    }
+
+    if (primaryDownload.platform === 'windows') {
+      return 'Windows available now. More downloads can show up here as they are released.';
+    }
+
+    if (primaryDownload.platform === 'linux') {
+      return 'Linux available now. More downloads can show up here as they are released.';
+    }
+
+    return 'More downloads can show up here as they are released.';
   }
 
   onMount(async () => {
@@ -253,6 +478,13 @@
       console.warn('[browser-site] failed to load release manifest', error);
     }
   });
+
+  $effect(() => {
+    startAuto();
+    return () => {
+      stopAuto();
+    };
+  });
 </script>
 
 <svelte:head>
@@ -269,13 +501,23 @@
       <div class="copy">
         <h1>Websites should work anywhere.</h1>
         <p class="lede">
-          Iris Browser makes websites easier to keep, share, and open, even when the connection
-          is weak or the usual platforms get in the way.
+          Open what matters, keep it close, and share it directly, whether you are online,
+          offline, or passing something to the person next to you.
         </p>
 
         <div class="actions">
           <a class="button primary" href={primaryDownload.href}>
-            {primaryDownload.ctaLabel}
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M12 4v10m0 0 4-4m-4 4-4-4M5 18h14"
+                fill="none"
+                stroke="currentColor"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+              />
+            </svg>
+            <span>{primaryDownload.ctaLabel}</span>
           </a>
           {#if releaseAssets.length > 1}
             <button
@@ -301,54 +543,173 @@
             {/each}
           </div>
         {/if}
-
       </div>
 
-      <section class="gallery" aria-label="Screenshots">
+      <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
+      <div
+        class="gallery"
+        role="region"
+        aria-label="Screenshots"
+        tabindex="0"
+        onmouseenter={onGalleryMouseEnter}
+        onmouseleave={onGalleryMouseLeave}
+        onfocusin={onGalleryFocusIn}
+        onfocusout={onGalleryFocusOut}
+        onkeydown={(event) => {
+          if (event.key === 'ArrowLeft') {
+            prev();
+            event.preventDefault();
+          } else if (event.key === 'ArrowRight') {
+            next();
+            event.preventDefault();
+          }
+        }}
+      >
         <div class="stage">
-          <img
-            class="hero-shot"
-            src={screenshots[current].src}
-            alt={screenshots[current].alt}
-            loading="eager"
-          />
+          <div
+            bind:this={viewportEl}
+            class="viewport"
+            role="group"
+            aria-label="Screenshot slides"
+            style="touch-action: pan-y pinch-zoom;"
+            onpointerdown={onPointerDown}
+            onpointermove={onPointerMove}
+            onpointerup={onPointerUp}
+            onpointercancel={onPointerCancel}
+          >
+            <div
+              class="track"
+              style={`transform: translateX(calc(-${current * 100}% + ${dragOffset}px)); transition: ${isDragging ? 'none' : 'transform 400ms ease-in-out'};`}
+            >
+              {#each screenshots as screenshot, index}
+                <div class="slide">
+                  <img
+                    class="hero-shot"
+                    src={screenshot.src}
+                    alt={screenshot.alt}
+                    loading={index === 0 ? 'eager' : 'lazy'}
+                    draggable="false"
+                  />
+                </div>
+              {/each}
+            </div>
+          </div>
 
           <div class="gallery-nav">
             <button type="button" class="nav-button" onclick={prev} aria-label="Previous screenshot">
-              Prev
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M14.5 5.5 8 12l6.5 6.5"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                />
+              </svg>
             </button>
             <button type="button" class="nav-button" onclick={next} aria-label="Next screenshot">
-              Next
+              <svg viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M9.5 5.5 16 12l-6.5 6.5"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                />
+              </svg>
             </button>
           </div>
         </div>
 
         <div class="caption">
-          <h2>{screenshots[current].title}</h2>
-          <p>{screenshots[current].body}</p>
+          <p class="caption-title">{screenshots[current].title}</p>
+          <p class="caption-body">{screenshots[current].body}</p>
         </div>
 
-        <div class="thumbnails" aria-label="Choose screenshot">
-          {#each screenshots as screenshot, index}
+        <div class="dots" aria-label="Choose screenshot">
+          {#each screenshots as _, index}
             <button
               type="button"
               class:active={index === current}
-              class="thumb"
-              aria-label={`Show screenshot ${index + 1}: ${screenshot.title}`}
+              class="dot"
+              aria-label={`Show screenshot ${index + 1}`}
               aria-pressed={index === current}
               onclick={() => go(index)}
-            >
-              <img src={screenshot.src} alt="" loading="lazy" />
-            </button>
+            ></button>
           {/each}
         </div>
-      </section>
+      </div>
+    </section>
 
-      <ul class="checklist">
-        {#each checklist as item}
-          <li>{item}</li>
-        {/each}
-      </ul>
+    <section class="benefits" aria-label="What Iris Browser helps with">
+      {#each benefits as item}
+        <article class="benefit">
+          <div class="benefit-head">
+            <span class={`benefit-icon ${item.tone}`} aria-hidden="true">
+              {#if item.icon === 'globe'}
+                <svg viewBox="0 0 24 24">
+                  <path
+                    d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm0 0c2.6 2.3 4 5.7 4 10s-1.4 7.7-4 10c-2.6-2.3-4-5.7-4-10s1.4-7.7 4-10Zm-8 10h16M12 2v20"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="1.8"
+                  />
+                </svg>
+              {:else if item.icon === 'download'}
+                <svg viewBox="0 0 24 24">
+                  <path
+                    d="M12 4v9m0 0 3.5-3.5M12 13 8.5 9.5M5 18h14"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="1.8"
+                  />
+                </svg>
+              {:else if item.icon === 'wifi'}
+                <svg viewBox="0 0 24 24">
+                  <path
+                    d="M3.5 9.5a13 13 0 0 1 17 0M6.5 12.5a8.6 8.6 0 0 1 11 0M9.8 15.8a4 4 0 0 1 4.4 0M12 19h.01"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="1.8"
+                  />
+                </svg>
+              {:else if item.icon === 'share'}
+                <svg viewBox="0 0 24 24">
+                  <path
+                    d="M14 5h5v5M10 14l9-9M19 14v3a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h3"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="1.8"
+                  />
+                </svg>
+              {:else}
+                <svg viewBox="0 0 24 24">
+                  <path
+                    d="M15 18a6 6 0 0 0-6 0M12 12a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Zm0 10a10 10 0 1 1 0-20 10 10 0 0 1 0 20Z"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="1.8"
+                  />
+                </svg>
+              {/if}
+            </span>
+            <h2>{item.title}</h2>
+          </div>
+          <p>{item.body}</p>
+        </article>
+      {/each}
     </section>
   </main>
 
@@ -360,32 +721,36 @@
 <style>
   :global(:root) {
     color-scheme: light dark;
-    --page-bg: #f5f7f8;
-    --page-glow: rgba(56, 110, 191, 0.12);
-    --surface: rgba(255, 255, 255, 0.88);
-    --surface-strong: #ffffff;
-    --border: rgba(22, 38, 54, 0.12);
-    --text-1: #102033;
-    --text-2: #587083;
-    --accent: #1f78f0;
-    --accent-strong: #155fc4;
-    --accent-soft: rgba(31, 120, 240, 0.12);
-    --shadow: 0 24px 60px rgba(16, 32, 51, 0.08);
+    --page-bg: #f5f5f5;
+    --page-glow: rgba(58, 124, 255, 0.08);
+    --surface: rgba(255, 255, 255, 0.72);
+    --surface-strong: rgba(255, 255, 255, 0.96);
+    --surface-soft: rgba(255, 255, 255, 0.54);
+    --border: rgba(26, 26, 26, 0.09);
+    --text-1: #1a1a1a;
+    --text-2: #555555;
+    --text-3: #888888;
+    --accent: #3a7cff;
+    --accent-strong: #255fdd;
+    --accent-soft: rgba(58, 124, 255, 0.16);
+    --shadow: 0 18px 48px rgba(15, 15, 15, 0.08);
   }
 
   @media (prefers-color-scheme: dark) {
     :global(:root) {
-      --page-bg: #0b1116;
-      --page-glow: rgba(94, 165, 255, 0.14);
-      --surface: rgba(18, 27, 35, 0.84);
-      --surface-strong: #121b23;
-      --border: rgba(191, 214, 235, 0.14);
-      --text-1: #edf4fb;
-      --text-2: #9db0c2;
-      --accent: #77b0ff;
-      --accent-strong: #9cc7ff;
-      --accent-soft: rgba(119, 176, 255, 0.18);
-      --shadow: 0 28px 70px rgba(0, 0, 0, 0.28);
+      --page-bg: #0f0f0f;
+      --page-glow: rgba(58, 124, 255, 0.1);
+      --surface: rgba(24, 24, 24, 0.74);
+      --surface-strong: rgba(24, 24, 24, 0.96);
+      --surface-soft: rgba(24, 24, 24, 0.54);
+      --border: rgba(255, 255, 255, 0.09);
+      --text-1: #ffffff;
+      --text-2: #aaaaaa;
+      --text-3: #7f7f7f;
+      --accent: #77aaff;
+      --accent-strong: #9bc0ff;
+      --accent-soft: rgba(119, 170, 255, 0.2);
+      --shadow: 0 24px 60px rgba(0, 0, 0, 0.2);
     }
   }
 
@@ -396,7 +761,7 @@
   :global(body) {
     margin: 0;
     background:
-      radial-gradient(circle at top center, var(--page-glow), transparent 34%),
+      radial-gradient(circle at top center, var(--page-glow), transparent 38%),
       var(--page-bg);
     color: var(--text-1);
     font-family:
@@ -426,25 +791,18 @@
 
   .content {
     flex: 1;
-    display: flex;
-    align-items: center;
-    padding: 1.4rem 0 2.5rem;
+    padding: 2rem 0 2.6rem;
   }
 
   .hero {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(320px, 0.95fr);
-    grid-template-areas:
-      'copy gallery'
-      'checklist gallery';
+    grid-template-columns: minmax(0, 0.88fr) minmax(360px, 1.12fr);
     gap: 2rem;
-    width: 100%;
     align-items: center;
   }
 
   .copy {
-    grid-area: copy;
-    max-width: 34rem;
+    max-width: 32rem;
   }
 
   h1 {
@@ -456,46 +814,56 @@
   }
 
   .lede {
-    margin: 1.2rem 0 0;
-    max-width: 32rem;
+    margin: 1.15rem 0 0;
+    max-width: 31rem;
     color: var(--text-2);
-    font-size: 1.1rem;
-    line-height: 1.65;
+    font-size: 1.08rem;
+    line-height: 1.62;
   }
 
   .actions {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.85rem;
-    margin: 1.8rem 0 0;
+    gap: 0.75rem;
+    margin: 1.65rem 0 0;
   }
 
   .button {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-height: 3.25rem;
-    padding: 0.85rem 1.15rem;
+    gap: 0.45rem;
+    min-height: 2.35rem;
+    padding: 0.5rem 0.82rem;
     border-radius: 999px;
     border: 1px solid var(--border);
-    font-size: 0.98rem;
+    font-size: 0.9rem;
     font-weight: 600;
+    letter-spacing: 0.01em;
     text-decoration: none;
     cursor: pointer;
     transition:
       transform 140ms ease,
       border-color 140ms ease,
-      background-color 140ms ease;
+      background-color 140ms ease,
+      color 140ms ease;
   }
 
   .button:hover {
     transform: translateY(-1px);
   }
 
+  .button svg {
+    width: 1rem;
+    height: 1rem;
+    flex: none;
+  }
+
   .button.primary {
     border-color: transparent;
     background: var(--accent);
     color: #fff;
+    box-shadow: 0 10px 28px rgba(58, 124, 255, 0.22);
   }
 
   .button.primary:hover {
@@ -503,15 +871,14 @@
   }
 
   .button.secondary {
-    background: var(--surface);
+    background: transparent;
     color: var(--text-1);
-    box-shadow: var(--shadow);
   }
 
   .download-note {
     margin: 0.85rem 0 0;
-    color: var(--text-2);
-    font-size: 0.92rem;
+    color: var(--text-3);
+    font-size: 0.9rem;
     line-height: 1.5;
   }
 
@@ -519,11 +886,11 @@
     display: grid;
     gap: 0.75rem;
     margin-top: 1rem;
-    padding: 1rem;
+    padding: 0.95rem;
     border: 1px solid var(--border);
-    border-radius: 1.4rem;
+    border-radius: 1.2rem;
     background: var(--surface);
-    box-shadow: var(--shadow);
+    backdrop-filter: blur(14px);
   }
 
   .download-item {
@@ -531,7 +898,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 1rem;
-    padding: 0.85rem 1rem;
+    padding: 0.82rem 0.95rem;
     border-radius: 1rem;
     background: var(--surface-strong);
     text-decoration: none;
@@ -547,134 +914,231 @@
     white-space: nowrap;
   }
 
-  .checklist {
-    grid-area: checklist;
-    align-self: start;
-    list-style: none;
-    padding: 0;
-    margin: 0.25rem 0 0;
-    border-top: 1px solid var(--border);
-  }
-
-  .checklist li {
-    display: flex;
-    align-items: center;
-    gap: 0.9rem;
-    padding: 0.95rem 0;
-    border-bottom: 1px solid var(--border);
-    font-size: 1rem;
-    font-weight: 500;
-    line-height: 1.4;
-  }
-
-  .checklist li::before {
-    content: '';
-    width: 0.72rem;
-    height: 0.72rem;
-    border-radius: 999px;
-    background: var(--accent);
-    box-shadow: 0 0 0 0.28rem var(--accent-soft);
-    flex: none;
-  }
-
   .gallery {
-    grid-area: gallery;
-    padding: 1rem;
-    border: 1px solid var(--border);
-    border-radius: 2rem;
-    background: var(--surface);
-    box-shadow: var(--shadow);
-    backdrop-filter: blur(18px);
+    padding: 0;
+    outline: none;
+  }
+
+  .gallery:focus-visible {
+    box-shadow: 0 0 0 2px var(--accent-soft);
   }
 
   .stage {
     position: relative;
+    user-select: none;
+  }
+
+  .viewport {
+    overflow: hidden;
+    border-radius: 1.45rem;
+  }
+
+  .track {
+    display: flex;
+    will-change: transform;
+  }
+
+  .slide {
+    width: 100%;
+    flex: 0 0 100%;
   }
 
   .hero-shot {
     display: block;
     width: 100%;
-    aspect-ratio: 16 / 10;
-    object-fit: cover;
-    border-radius: 1.45rem;
-    background: var(--surface-strong);
+    height: auto;
+    object-fit: contain;
+    background: transparent;
   }
 
   .gallery-nav {
     position: absolute;
-    inset: auto 0 1rem 0;
+    inset: 0;
     display: flex;
     justify-content: space-between;
-    padding: 0 1rem;
+    align-items: center;
+    padding: 0 0.8rem;
     pointer-events: none;
   }
 
   .nav-button {
     pointer-events: auto;
-    min-height: 2.4rem;
-    padding: 0.55rem 0.9rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.6rem;
+    height: 2.6rem;
     border: 1px solid var(--border);
     border-radius: 999px;
     background: color-mix(in srgb, var(--surface-strong) 82%, transparent);
     color: var(--text-1);
-    font-size: 0.84rem;
-    font-weight: 700;
     cursor: pointer;
     backdrop-filter: blur(12px);
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
+    transition:
+      transform 140ms ease,
+      background-color 140ms ease,
+      border-color 140ms ease;
+  }
+
+  .nav-button:hover {
+    transform: translateY(-1px);
+    background: color-mix(in srgb, var(--surface-strong) 92%, transparent);
+  }
+
+  .nav-button svg {
+    width: 1.2rem;
+    height: 1.2rem;
   }
 
   .caption {
-    padding: 1.15rem 0.35rem 0;
+    padding: 0.95rem 0.1rem 0;
   }
 
-  .caption h2 {
+  .caption-title {
     margin: 0;
-    font-size: 1.35rem;
+    font-size: 1.2rem;
+    font-weight: 700;
     line-height: 1.2;
     letter-spacing: -0.02em;
   }
 
-  .caption p {
-    margin: 0.55rem 0 0;
+  .caption-body {
+    margin: 0.42rem 0 0;
     color: var(--text-2);
-    font-size: 0.98rem;
-    line-height: 1.6;
+    font-size: 0.96rem;
+    line-height: 1.55;
   }
 
-  .thumbnails {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 0.75rem;
+  .dots {
+    display: flex;
+    justify-content: center;
+    gap: 0.55rem;
     margin-top: 1rem;
   }
 
-  .thumb {
-    padding: 0.3rem;
+  .dot {
+    width: 0.62rem;
+    height: 0.62rem;
+    padding: 0;
     border: 1px solid transparent;
-    border-radius: 1rem;
-    background: transparent;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--text-2) 24%, transparent);
     cursor: pointer;
     transition:
-      transform 140ms ease,
       border-color 140ms ease,
       background-color 140ms ease;
   }
 
-  .thumb:hover {
-    transform: translateY(-1px);
+  .dot:hover {
+    background: color-mix(in srgb, var(--text-2) 42%, transparent);
   }
 
-  .thumb.active {
+  .dot.active {
     border-color: var(--accent);
-    background: var(--accent-soft);
+    background: var(--accent);
   }
 
-  .thumb img {
-    display: block;
-    width: 100%;
-    aspect-ratio: 16 / 10;
-    object-fit: cover;
+  .benefits {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.9rem;
+    margin-top: 2.35rem;
+  }
+
+  .benefit {
+    padding: 1rem 1.05rem;
+    border: 1px solid var(--border);
+    border-radius: 1.2rem;
+    background: var(--surface-soft);
+    backdrop-filter: blur(14px);
+  }
+
+  .benefit-head {
+    display: flex;
+    align-items: center;
+    gap: 0.78rem;
+  }
+
+  .benefit-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.15rem;
+    height: 2.15rem;
     border-radius: 0.8rem;
+    flex: none;
+  }
+
+  .benefit-icon svg {
+    width: 1.1rem;
+    height: 1.1rem;
+  }
+
+  .benefit-icon.blue {
+    color: #2d6df6;
+    background: rgba(45, 109, 246, 0.14);
+  }
+
+  .benefit-icon.green {
+    color: #1d9159;
+    background: rgba(29, 145, 89, 0.14);
+  }
+
+  .benefit-icon.amber {
+    color: #b06a00;
+    background: rgba(225, 151, 33, 0.16);
+  }
+
+  .benefit-icon.violet {
+    color: #7052d7;
+    background: rgba(112, 82, 215, 0.14);
+  }
+
+  .benefit-icon.rose {
+    color: #c64a6d;
+    background: rgba(198, 74, 109, 0.14);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .benefit-icon.blue {
+      color: #8bb3ff;
+      background: rgba(119, 170, 255, 0.16);
+    }
+
+    .benefit-icon.green {
+      color: #73d29c;
+      background: rgba(67, 177, 117, 0.18);
+    }
+
+    .benefit-icon.amber {
+      color: #f0bb61;
+      background: rgba(240, 187, 97, 0.16);
+    }
+
+    .benefit-icon.violet {
+      color: #b79dff;
+      background: rgba(183, 157, 255, 0.16);
+    }
+
+    .benefit-icon.rose {
+      color: #ff97b2;
+      background: rgba(255, 151, 178, 0.16);
+    }
+  }
+
+  .benefit h2 {
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1.35;
+    letter-spacing: -0.02em;
+  }
+
+  .benefit p {
+    margin: 0.45rem 0 0;
+    color: var(--text-2);
+    font-size: 0.94rem;
+    line-height: 1.55;
   }
 
   .footer {
@@ -696,21 +1160,21 @@
 
   @media (max-width: 940px) {
     .content {
-      align-items: flex-start;
-      padding-top: 1.4rem;
+      padding-top: 1.2rem;
     }
 
     .hero {
       grid-template-columns: 1fr;
-      grid-template-areas:
-        'copy'
-        'gallery'
-        'checklist';
       gap: 1.5rem;
     }
 
     .copy {
       max-width: none;
+    }
+
+    .benefits {
+      grid-template-columns: 1fr;
+      margin-top: 1.9rem;
     }
   }
 
@@ -733,26 +1197,25 @@
       font-size: 1rem;
     }
 
-    .gallery {
-      padding: 0.8rem;
-      border-radius: 1.6rem;
+    .gallery-nav {
+      padding: 0 0.45rem;
     }
 
-    .hero-shot {
-      border-radius: 1.15rem;
+    .nav-button {
+      width: 2.35rem;
+      height: 2.35rem;
     }
 
     .caption {
-      padding-left: 0.15rem;
-      padding-right: 0.15rem;
+      padding-top: 0.8rem;
     }
 
-    .caption h2 {
-      font-size: 1.15rem;
+    .caption-title {
+      font-size: 1.08rem;
     }
 
-    .thumbnails {
-      gap: 0.5rem;
+    .benefit {
+      padding: 0.95rem 1rem;
     }
 
     .footer {

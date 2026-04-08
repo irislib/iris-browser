@@ -161,12 +161,17 @@ export function workspaceInstallCommands(pnpmCommand = 'pnpm') {
 export function windowsTauriBuildCommand(
   target,
   {
-    relativeAppDir = 'apps\\iris',
+    relativeAppDir = '.',
     configPath = packagingConfigPath(),
   } = {},
 ) {
+  const tauriPath =
+    relativeAppDir === '.' || relativeAppDir === '.\\'
+      ? '.\\node_modules\\.bin\\tauri.cmd'
+      : `.\\${relativeAppDir}\\node_modules\\.bin\\tauri.cmd`
+
   return [
-    `& ${psQuote(`.\\${relativeAppDir}\\node_modules\\.bin\\tauri.cmd`)}`,
+    `& ${psQuote(tauriPath)}`,
     'build',
     '--config',
     psQuote(configPath),
@@ -215,6 +220,39 @@ export function defaultSharedWindowsRepoPath(currentRepoRoot = repoRoot) {
 
   const relative = currentRepoRoot.slice(homeDir.length + 1).split('/').join('\\')
   return `C:\\Mac\\Home\\${relative}`
+}
+
+export function windowsRepoSyncScript(sharedRepoPath) {
+  return `
+$sharedRepo = ${psQuote(sharedRepoPath)}
+$guestRepo = Join-Path $env:USERPROFILE 'src\\iris-browser'
+$guestRoot = Split-Path $guestRepo
+$guestAppsDir = Join-Path $guestRepo 'apps'
+$sharedAppDir = Join-Path $sharedRepo 'apps\\iris'
+$guestAppDir = Join-Path $guestAppsDir 'iris'
+New-Item -ItemType Directory -Force -Path $guestRoot | Out-Null
+New-Item -ItemType Directory -Force -Path $guestRepo | Out-Null
+foreach ($file in @('package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml')) {
+  $source = Join-Path $sharedRepo $file
+  if (Test-Path $source) {
+    Copy-Item $source (Join-Path $guestRepo $file) -Force
+  }
+}
+if (Test-Path $guestAppsDir) {
+  Remove-Item -Recurse -Force $guestAppsDir
+}
+New-Item -ItemType Directory -Force -Path $guestAppsDir | Out-Null
+robocopy $sharedAppDir $guestAppDir /E /XD target dist node_modules .pnpm-store .git artifacts src-tauri\\gen\\android src-tauri\\gen\\apple /XF .env.release.local .env.zapstore.local | Out-Null
+if ($LASTEXITCODE -ge 8) { exit $LASTEXITCODE }
+$binDir = Join-Path $env:USERPROFILE 'bin'
+New-Item -ItemType Directory -Force -Path $binDir | Out-Null
+$shimPath = Join-Path $binDir 'pnpm.cmd'
+$shimLines = @(
+  '@echo off'
+  'corepack pnpm %*'
+)
+Set-Content -Encoding ASCII -Path $shimPath -Value $shimLines
+`
 }
 
 function readOptionalEnvFiles(envFiles) {
@@ -541,24 +579,7 @@ function shouldRunStep(step, options) {
 }
 
 function syncRepoToWindowsVm({ vmName, sharedRepoPath, dryRun }) {
-  const script = `
-$sharedRepo = ${psQuote(sharedRepoPath)}
-$guestRepo = Join-Path $env:USERPROFILE 'src\\iris-browser'
-$guestRoot = Split-Path $guestRepo
-New-Item -ItemType Directory -Force -Path $guestRoot | Out-Null
-robocopy $sharedRepo $guestRepo /E /XD target dist node_modules .pnpm-store .git artifacts /XF .env.release.local .env.zapstore.local | Out-Null
-if ($LASTEXITCODE -ge 8) { exit $LASTEXITCODE }
-$binDir = Join-Path $env:USERPROFILE 'bin'
-New-Item -ItemType Directory -Force -Path $binDir | Out-Null
-$shimPath = Join-Path $binDir 'pnpm.cmd'
-$shimLines = @(
-  '@echo off'
-  'corepack pnpm %*'
-)
-Set-Content -Encoding ASCII -Path $shimPath -Value $shimLines
-`
-
-  runWindowsPowerShell(vmName, script, { dryRun })
+  runWindowsPowerShell(vmName, windowsRepoSyncScript(sharedRepoPath), { dryRun })
 }
 
 function buildWindowsArtifacts({ env, assetPrefix, dryRun, builtLines }) {
@@ -587,6 +608,7 @@ function buildWindowsArtifacts({ env, assetPrefix, dryRun, builtLines }) {
 
   const guiTargets = splitCsv(env.IRIS_WINDOWS_GUI_TARGETS || 'x86_64-pc-windows-msvc')
   const guestRepo = "(Join-Path $env:USERPROFILE 'src\\iris-browser')"
+  const guestAppDir = "(Join-Path $env:USERPROFILE 'src\\iris-browser\\apps\\iris')"
   const distPath = `${sharedRepoPath}\\dist\\iris-native`
   const pathSetup = [
     "$env:CI = 'true'",
@@ -611,9 +633,9 @@ New-Item -ItemType Directory -Force -Path ${psQuote(distPath)} | Out-Null
       vmName,
       `
 ${pathSetup}
-Set-Location ${guestRepo}
+Set-Location ${guestAppDir}
 ${windowsTauriBuildCommand(target)}
-$bundleDir = Join-Path ${guestRepo} ${psQuote(`apps\\iris\\src-tauri\\target\\${target}\\release\\bundle\\nsis`)}
+$bundleDir = Join-Path ${guestAppDir} ${psQuote(`src-tauri\\target\\${target}\\release\\bundle\\nsis`)}
 $installer = Get-ChildItem $bundleDir -Filter '*-setup.exe' | Select-Object -First 1
 if (-not $installer) { throw ${psQuote(`No NSIS installer found for ${target}`)} }
 Copy-Item $installer.FullName ${psQuote(`${distPath}\\${installerName}`)} -Force

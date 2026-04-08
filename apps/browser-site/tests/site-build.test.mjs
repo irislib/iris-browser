@@ -11,9 +11,9 @@ const distDir = join(appDir, 'dist');
 
 test('build output contains the landing page title, copy, and screenshot assets', () => {
   const htmlPath = join(distDir, 'index.html');
-  const homeScreenshotPath = join(distDir, 'browser-home.jpg');
-  const jumbleScreenshotPath = join(distDir, 'browser-jumble.jpg');
-  const permissionScreenshotPath = join(distDir, 'browser-permission.jpg');
+  const homeScreenshotPath = join(distDir, 'browser-home.png');
+  const jumbleScreenshotPath = join(distDir, 'browser-jumble.png');
+  const permissionScreenshotPath = join(distDir, 'browser-permission.png');
   const assetsDir = join(distDir, 'assets');
 
   assert.equal(existsSync(htmlPath), true);
@@ -41,18 +41,18 @@ test('build output contains the landing page title, copy, and screenshot assets'
   assert.doesNotMatch(html, /modulepreload/);
   assert.doesNotMatch(html, /crossorigin/);
   assert.match(jsBundle, /Websites should work anywhere\./);
-  assert.match(jsBundle, /Iris Browser makes websites easier to keep, share, and open/);
+  assert.match(jsBundle, /Open what matters, keep it close, and share it directly/);
   assert.match(jsBundle, /Publish websites for free/);
-  assert.match(jsBundle, /Keep websites ready offline/);
+  assert.match(jsBundle, /Save websites for offline use/);
   assert.match(jsBundle, /Share to nearby devices over Wi-Fi/);
   assert.match(jsBundle, /Send files without the usual friction/);
   assert.match(jsBundle, /Skip email, phone, and extra accounts/);
   assert.match(jsBundle, /Download for Mac/);
-  assert.match(jsBundle, /Mac download for now\./);
+  assert.match(jsBundle, /Mac available now\./);
   assert.match(jsBundle, /upload\.iris\.to/);
   assert.match(jsBundle, /releases%2Firis-browser\/latest/);
   assert.match(jsBundle, /release\.json/);
-  assert.match(jsBundle, /browser-home\.jpg/);
-  assert.match(jsBundle, /browser-jumble\.jpg/);
-  assert.match(jsBundle, /browser-permission\.jpg/);
+  assert.match(jsBundle, /browser-home\.png/);
+  assert.match(jsBundle, /browser-jumble\.png/);
+  assert.match(jsBundle, /browser-permission\.png/);
 });

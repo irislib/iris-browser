@@ -13,6 +13,7 @@ import {
   parseArgs,
   usage,
   windowsArtifactArch,
+  windowsRepoSyncScript,
   windowsTauriBuildCommand,
   workspaceInstallCommands,
 } from '../scripts/local-release.mjs'
@@ -87,9 +88,19 @@ test('workspaceInstallCommands installs the standalone workspace root', () => {
   assert.deepEqual(workspaceInstallCommands('pnpm'), ['pnpm install --frozen-lockfile --ignore-scripts'])
 })
 
+test('windowsRepoSyncScript only copies workspace root files and the iris app', () => {
+  const script = windowsRepoSyncScript('C:\\Mac\\Home\\src\\iris-browser')
+  assert.match(script, /foreach \(\$file in @\('package\.json', 'pnpm-lock\.yaml', 'pnpm-workspace\.yaml'\)\)/)
+  assert.match(script, /\$sharedAppDir = Join-Path \$sharedRepo 'apps\\iris'/)
+  assert.match(script, /robocopy \$sharedAppDir \$guestAppDir \/E/)
+  assert.match(script, /src-tauri\\gen\\android/)
+  assert.match(script, /src-tauri\\gen\\apple/)
+  assert.doesNotMatch(script, /robocopy \$sharedRepo \$guestRepo \/E/)
+})
+
 test('windowsTauriBuildCommand uses the Windows tauri.cmd shim directly', () => {
   const command = windowsTauriBuildCommand('x86_64-pc-windows-msvc')
-  assert.match(command, /node_modules\\\.bin\\tauri\.cmd/)
+  assert.match(command, /^& '.*node_modules\\\.bin\\tauri\.cmd'/)
   assert.match(command, /--config 'src-tauri\/tauri\.release\.no-frontend\.json'/)
   assert.match(command, /--target 'x86_64-pc-windows-msvc'/)
   assert.match(command, /--bundles nsis --ci$/)
