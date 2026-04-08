@@ -5,6 +5,7 @@
   import {
     automationUpdateState,
     automationShutdown,
+    cacheTreeRoot,
     createNip07Webview,
     createHtreeWebview,
     deepLinkFrontendReady,
@@ -52,11 +53,19 @@
   import Nip07PermissionBar from './components/Nip07PermissionBar.svelte';
   import Settings from './components/Settings.svelte';
   import { minidenticon } from 'minidenticons';
-  import { nhashFromCidString } from './lib/nhash';
   import {
     clearClipboardIfUnchanged,
     sensitiveClipboardClearDelayMs,
   } from './lib/sensitiveClipboard';
+  import {
+    compareMutableTreeRootVersions,
+    mutableTreeRootsMatch,
+    normalizeMutableTreeRoot,
+    readCachedMutableTreeRoot,
+    subscribeMutableTreeRootEvents,
+    writeCachedMutableTreeRoot,
+    type MutableTreeRoot,
+  } from './lib/treeRoots';
 
   type View = 'launcher' | 'settings' | 'webview';
   type SettingsTabId = 'app' | 'privacy' | 'users' | 'network' | 'about';
@@ -64,10 +73,13 @@
     pushHistory?: boolean;
     preferPlainLoopbackHost?: boolean;
   };
-  type ResolvedTreeRoot = {
-    hash?: string | null;
-    cid?: string | null;
-    nhash?: string | null;
+  type MutableTreeTarget = {
+    npub: string;
+    treeName: string;
+  };
+  type MutableTreeSession = MutableTreeTarget & {
+    currentRoot: MutableTreeRoot | null;
+    pendingRoot: MutableTreeRoot | null;
   };
   type DetectedPwa = {
     sourceAppId?: string;
@@ -194,7 +206,9 @@
   let isInstallingPwa = $state(false);
   let childWebviewReady = $state(!!g.__irisChildReady);
   let childUsesPlainLoopbackTransport = $state(false);
+  let mutableTreeSession: MutableTreeSession | null = $state(null);
   const plainLoopbackFallbackScopes = new Set<string>();
+  let stopMutableTreeRootSubscription: (() => void) | null = null;
 
   let canGoBack = $derived(
     (currentView === 'webview' && webviewNavDepth > 0) ||
@@ -250,6 +264,14 @@
       return `right: 12px; bottom: calc(env(safe-area-inset-bottom, 0px) + ${toolbarHeight}px + ${keyboardInsetBottom}px + 8px);`;
     }
     return `right: 12px; top: calc(env(safe-area-inset-top, 0px) + ${toolbarHeight}px + 8px);`;
+  });
+  let hasPendingMutableTreeRefresh = $derived.by(() => {
+    if (currentView !== 'webview' || !currentUrl || !mutableTreeSession?.pendingRoot) {
+      return false;
+    }
+
+    const htree = parseHtreeUrl(currentUrl);
+    return htree?.npub === mutableTreeSession.npub && htree.treename === mutableTreeSession.treeName;
   });
 
   function urlToDisplay(url: string): string {
@@ -394,7 +416,163 @@
     return 'Failed to open page.';
   }
 
-  async function refreshTreeRoot(npub: string, treename: string): Promise<ResolvedTreeRoot | null> {
+  function mutableTreeTargetFromHtree(htree: {
+    npub?: string;
+    treename?: string;
+  } | null): MutableTreeTarget | null {
+    if (!htree?.npub || !htree.treename) {
+      return null;
+    }
+    return {
+      npub: htree.npub,
+      treeName: htree.treename,
+    };
+  }
+
+  function mutableTreeTargetFromUrl(url: string): MutableTreeTarget | null {
+    return mutableTreeTargetFromHtree(parseHtreeUrl(url));
+  }
+
+  function mutableTreeTargetsMatch(
+    left: MutableTreeTarget | MutableTreeSession | null,
+    right: MutableTreeTarget | MutableTreeSession | null,
+  ): boolean {
+    return !!left && !!right && left.npub === right.npub && left.treeName === right.treeName;
+  }
+
+  async function seedNativeMutableTreeRoot(
+    target: MutableTreeTarget,
+    root: MutableTreeRoot,
+  ): Promise<void> {
+    try {
+      await cacheTreeRoot(
+        target.npub,
+        target.treeName,
+        root.hash,
+        root.key ?? null,
+        root.visibility ?? null,
+        root.nhash,
+      );
+    } catch (error) {
+      console.warn('[Iris] failed to seed native tree root cache:', target.npub, target.treeName, formatWebviewError(error));
+    }
+  }
+
+  function stopMutableTreeTracking() {
+    stopMutableTreeRootSubscription?.();
+    stopMutableTreeRootSubscription = null;
+    mutableTreeSession = null;
+  }
+
+  async function observeMutableTreeRoot(
+    target: MutableTreeTarget,
+    root: MutableTreeRoot,
+  ): Promise<void> {
+    const normalized = normalizeMutableTreeRoot(root);
+    if (!normalized || !mutableTreeTargetsMatch(mutableTreeSession, target)) {
+      return;
+    }
+
+    writeCachedMutableTreeRoot(target.npub, target.treeName, normalized);
+    void seedNativeMutableTreeRoot(target, normalized);
+
+    const session = mutableTreeSession;
+    if (!session) {
+      return;
+    }
+
+    const currentRoot = session.currentRoot;
+    const pendingRoot = session.pendingRoot;
+
+    if (!currentRoot) {
+      writeCachedMutableTreeRoot(target.npub, target.treeName, normalized);
+      void seedNativeMutableTreeRoot(target, normalized);
+      mutableTreeSession = {
+        ...session,
+        currentRoot: normalized,
+        pendingRoot: null,
+      };
+
+      const currentTarget = currentUrl ? mutableTreeTargetFromUrl(currentUrl) : null;
+      if (
+        currentView === 'webview' &&
+        currentUrl &&
+        mutableTreeTargetsMatch(currentTarget, target) &&
+        childPageLoadState !== 'finished'
+      ) {
+        try {
+          await destroyChildWebview();
+          await navigate(currentUrl, { pushHistory: false });
+        } catch (error) {
+          console.warn('[Iris] failed to reload mutable tree from observed root:', formatWebviewError(error));
+        }
+      }
+      return;
+    }
+
+    if (mutableTreeRootsMatch(normalized, currentRoot)) {
+      writeCachedMutableTreeRoot(target.npub, target.treeName, normalized);
+      void seedNativeMutableTreeRoot(target, normalized);
+      mutableTreeSession = {
+        ...session,
+        currentRoot: {
+          ...currentRoot,
+          ...normalized,
+        },
+        pendingRoot: pendingRoot && mutableTreeRootsMatch(normalized, pendingRoot) ? null : pendingRoot,
+      };
+      return;
+    }
+
+    const baselineRoot = pendingRoot ?? currentRoot;
+    if (compareMutableTreeRootVersions(normalized, baselineRoot) <= 0) {
+      return;
+    }
+
+    writeCachedMutableTreeRoot(target.npub, target.treeName, normalized);
+    void seedNativeMutableTreeRoot(target, normalized);
+    mutableTreeSession = {
+      ...session,
+      pendingRoot: normalized,
+    };
+  }
+
+  async function startMutableTreeTracking(
+    target: MutableTreeTarget,
+    initialRoot: MutableTreeRoot | null,
+  ): Promise<void> {
+    stopMutableTreeRootSubscription?.();
+    stopMutableTreeRootSubscription = null;
+
+    const normalizedInitial = normalizeMutableTreeRoot(initialRoot);
+    mutableTreeSession = {
+      ...target,
+      currentRoot: normalizedInitial,
+      pendingRoot: null,
+    };
+
+    if (normalizedInitial) {
+      writeCachedMutableTreeRoot(target.npub, target.treeName, normalizedInitial);
+      void seedNativeMutableTreeRoot(target, normalizedInitial);
+    }
+
+    try {
+      const serverUrl = await getHtreeServerUrl();
+      if (!mutableTreeTargetsMatch(mutableTreeSession, target)) {
+        return;
+      }
+      stopMutableTreeRootSubscription = subscribeMutableTreeRootEvents({
+        serverUrl,
+        npub: target.npub,
+        treeName: target.treeName,
+        onRoot: (root) => observeMutableTreeRoot(target, root),
+      });
+    } catch (error) {
+      console.warn('[Iris] failed to start mutable tree tracking:', target.npub, target.treeName, formatWebviewError(error));
+    }
+  }
+
+  async function refreshTreeRoot(npub: string, treename: string): Promise<MutableTreeRoot | null> {
     try {
       const serverUrl = await getHtreeServerUrl();
       const refreshUrl =
@@ -406,12 +584,24 @@
           cache: 'no-store',
           signal: controller.signal,
         });
-        const payload = await response.json().catch(() => null) as ResolvedTreeRoot & { error?: string } | null;
+        const payload = await response.json().catch(() => null) as Record<string, unknown> | null;
         if (response.ok && !payload?.error) {
-          return {
-            ...payload,
-            nhash: payload.nhash ?? nhashFromCidString(payload.cid) ?? nhashFromCidString(payload.hash),
-          };
+          return normalizeMutableTreeRoot({
+            hash: typeof payload.hash === 'string' ? payload.hash : null,
+            cid: typeof payload.cid === 'string' ? payload.cid : null,
+            nhash: typeof payload.nhash === 'string' ? payload.nhash : null,
+            key: typeof payload.key_tag === 'string' ? payload.key_tag : null,
+            visibility: typeof payload.encryptedKey === 'string'
+              ? 'link-visible'
+              : typeof payload.selfEncryptedKey === 'string'
+                ? 'private'
+                : 'public',
+            source: typeof payload.source === 'string' ? payload.source : null,
+            createdAt: typeof payload.created_at === 'number' ? payload.created_at : null,
+            eventId: typeof payload.event_id === 'string' ? payload.event_id : null,
+            encryptedKey: typeof payload.encryptedKey === 'string' ? payload.encryptedKey : null,
+            selfEncryptedKey: typeof payload.selfEncryptedKey === 'string' ? payload.selfEncryptedKey : null,
+          });
         }
       } catch (error) {
         console.warn('[Iris] failed to refresh tree root:', npub, treename, formatWebviewError(error));
@@ -972,6 +1162,7 @@
     }
     setChildWebviewReady(false);
     childUsesPlainLoopbackTransport = false;
+    stopMutableTreeTracking();
     resetChildDiagnostics();
     scheduleAutomationStateSync();
   }
@@ -1004,6 +1195,7 @@
       preferPlainLoopbackHost = false,
     } = options;
     const htree = parseHtreeUrl(url);
+    const nextMutableTreeTarget = mutableTreeTargetFromHtree(htree);
     const usePlainLoopbackTransport = htree
       ? shouldUsePlainLoopbackTransport(url, preferPlainLoopbackHost)
       : false;
@@ -1033,24 +1225,41 @@
     const y = top;
     const width = window.innerWidth;
     const height = Math.max(0, window.innerHeight - top - bottom);
-    let builtInTreeRoot: ResolvedTreeRoot | null = null;
+    let initialMutableTreeRoot = nextMutableTreeTarget && mutableTreeTargetsMatch(mutableTreeSession, nextMutableTreeTarget)
+      ? mutableTreeSession?.currentRoot ?? null
+      : nextMutableTreeTarget
+        ? readCachedMutableTreeRoot(nextMutableTreeTarget.npub, nextMutableTreeTarget.treeName)
+        : null;
 
-    if (htree?.npub && htree.treename && isBuiltInIrisApp(htree.npub, htree.treename)) {
+    if (nextMutableTreeTarget && initialMutableTreeRoot) {
+      void seedNativeMutableTreeRoot(nextMutableTreeTarget, initialMutableTreeRoot);
+    }
+
+    if (
+      !initialMutableTreeRoot &&
+      htree?.npub &&
+      htree.treename &&
+      isBuiltInIrisApp(htree.npub, htree.treename)
+    ) {
       // Built-in apps are released independently of the shell. Refresh the
       // mutable root before navigation, but keep the previous cached root if
       // relays are flaky so the app can still load.
-      builtInTreeRoot = await refreshTreeRoot(htree.npub, htree.treename);
+      initialMutableTreeRoot = await refreshTreeRoot(htree.npub, htree.treename);
+      if (initialMutableTreeRoot && nextMutableTreeTarget) {
+        writeCachedMutableTreeRoot(nextMutableTreeTarget.npub, nextMutableTreeTarget.treeName, initialMutableTreeRoot);
+        void seedNativeMutableTreeRoot(nextMutableTreeTarget, initialMutableTreeRoot);
+      }
     }
 
     const htreeWebviewTarget = (
       htree?.npub &&
       htree.treename &&
-      builtInTreeRoot?.nhash
+      initialMutableTreeRoot?.nhash
     )
       ? {
           ...htree,
           host: htree.npub,
-          nhash: builtInTreeRoot.nhash,
+          nhash: initialMutableTreeRoot.nhash,
         }
       : htree;
 
@@ -1061,7 +1270,7 @@
             CHILD_LABEL,
             {
               ...htreeWebviewTarget,
-              cacheBust: builtInTreeRoot?.cid ?? builtInTreeRoot?.hash ?? undefined,
+              cacheBust: initialMutableTreeRoot?.cid ?? initialMutableTreeRoot?.hash ?? undefined,
             },
             x,
             y,
@@ -1101,6 +1310,18 @@
       await navigateWebview(CHILD_LABEL, url);
       childUsesPlainLoopbackTransport = false;
       scheduleWebviewBoundsUpdate();
+    }
+
+    if (nextMutableTreeTarget) {
+      if (!mutableTreeTargetsMatch(mutableTreeSession, nextMutableTreeTarget)) {
+        void startMutableTreeTracking(nextMutableTreeTarget, initialMutableTreeRoot);
+      } else if (initialMutableTreeRoot && !mutableTreeSession?.currentRoot) {
+        mutableTreeSession = {
+          ...mutableTreeSession,
+          currentRoot: initialMutableTreeRoot,
+          pendingRoot: mutableTreeSession.pendingRoot,
+        };
+      }
     }
 
     scheduleHtreeLoadStallRecovery(url);
@@ -1603,6 +1824,11 @@
       return;
     }
     if (currentView === 'webview' && childWebviewReady) {
+      if (mutableTreeTargetFromUrl(currentUrl)) {
+        await destroyChildWebview();
+        await navigate(currentUrl, { pushHistory: false });
+        return;
+      }
       await reloadWebview(CHILD_LABEL);
     }
   }
@@ -2106,6 +2332,7 @@
       if (automationSyncRaf !== null) cancelAnimationFrame(automationSyncRaf);
       if (permissionPromptPollTimer) clearInterval(permissionPromptPollTimer);
       if (accountSecretClipboardClearTimer) clearTimeout(accountSecretClipboardClearTimer);
+      stopMutableTreeTracking();
       unlistenLocation();
       unlistenPageLoad();
       unlistenDiagnostic();
@@ -2402,6 +2629,19 @@
           respond={(decision) => void respondToPermissionPrompt(decision)}
         />
       {/if}
+
+      {#if hasPendingMutableTreeRefresh}
+        <div class="mt-2 flex items-center justify-between gap-3 rounded-2xl bg-surface-0 px-3 py-2 text-sm">
+          <div class="min-w-0 text-text-2">A newer version of this site is ready.</div>
+          <button
+            data-tauri-drag-region="false"
+            class="btn h-8 shrink-0 rounded-full bg-accent px-3 text-xs text-white hover:opacity-90"
+            onclick={() => void refresh()}
+          >
+            Refresh
+          </button>
+        </div>
+      {/if}
     </div>
   {:else}
     <div
@@ -2633,6 +2873,19 @@
           permissionOriginLabel={permissionOriginLabel}
           respond={(decision) => void respondToPermissionPrompt(decision)}
         />
+      {/if}
+
+      {#if hasPendingMutableTreeRefresh}
+        <div class="mt-2 flex items-center justify-between gap-3 rounded-2xl bg-surface-0 px-3 py-2 text-sm">
+          <div class="min-w-0 text-text-2">A newer version of this site is ready.</div>
+          <button
+            data-tauri-drag-region="false"
+            class="btn h-8 shrink-0 rounded-full bg-accent px-3 text-xs text-white hover:opacity-90"
+            onclick={() => void refresh()}
+          >
+            Refresh
+          </button>
+        </div>
       {/if}
     </div>
   {/if}
