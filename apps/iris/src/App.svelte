@@ -43,6 +43,7 @@
   import { animalName } from './lib/animalName';
   import { bookmarkSavedName, isBuiltInIrisApp, matchesPwaIdentity } from './lib/apps';
   import { ownerProfileUrl } from './lib/addressIdentity';
+  import { hasMeaningfulChildDiagnosticsSnapshot } from './lib/diagnostics';
   import { appsStore } from './stores/apps';
   import AddressOwnerPill from './components/AddressOwnerPill.svelte';
   import HistoryEntryIcon from './components/HistoryEntryIcon.svelte';
@@ -221,7 +222,10 @@
     currentUrl.startsWith('https://') &&
     !!detectedPwa?.manifestUrl,
   );
-  let currentPermissionPrompt = $derived(permissionPromptQueue[0] ?? null);
+  let currentPermissionPrompt = $derived.by(() => {
+    if (currentView !== 'webview' || !currentUrl) return null;
+    return permissionPromptQueue.find((prompt) => permissionPromptTargetsCurrentPage(prompt)) ?? null;
+  });
   let showShellHistoryDropdown = $derived(
     showDropdown &&
     dropdownItems.length > 0 &&
@@ -845,16 +849,58 @@
     }
   }
 
+  function stripInternalHtreeQueryParams(url: string): string {
+    try {
+      const parsed = new URL(url);
+      parsed.searchParams.delete('iris_htree_server');
+      parsed.searchParams.delete('iris_htree_canonical');
+      parsed.searchParams.delete('iris_htree_session');
+      parsed.searchParams.delete('iris_htree_root');
+      return parsed.toString();
+    } catch {
+      return url;
+    }
+  }
+
+  function canonicalChildEventUrl(url: string, referenceUrl: string): string {
+    return stripInternalHtreeQueryParams(normalizeChildReportedUrl(url, referenceUrl));
+  }
+
+  function isCurrentChildEventUrl(url?: string | null): boolean {
+    const reportedUrl = url?.trim();
+    const activeUrl = (childPageLoadUrl || currentUrl).trim();
+    if (!reportedUrl || !activeUrl) return true;
+
+    return canonicalChildEventUrl(reportedUrl, activeUrl) === canonicalChildEventUrl(activeUrl, reportedUrl);
+  }
+
+  function shouldRecoverCurrentHtreeResourceError(event: WebviewDiagnosticEvent): boolean {
+    if (currentView !== 'webview' || !currentUrl || !parseHtreeUrl(currentUrl)) return false;
+    if (childUsesPlainLoopbackTransport) return false;
+    if (!isCurrentChildEventUrl(event.url)) return false;
+    if (event.source !== 'resource-error') return false;
+
+    const error = event.error?.trim();
+    return !!error && isFatalChildDiagnosticError(error, event.source);
+  }
+
+  function permissionPromptTargetsCurrentPage(prompt: Nip07PermissionPrompt): boolean {
+    if (currentView !== 'webview' || !currentUrl) return false;
+    return browserIsolationScope(prompt.origin) === browserIsolationScope(currentUrl);
+  }
+
   function shouldRefreshBuiltInAppTreeRoot(url: string): boolean {
     const htree = parseHtreeUrl(url);
     return isBuiltInIrisApp(htree?.npub, htree?.treename);
   }
 
   function hasChildDiagnosticsSnapshot(): boolean {
-    return !!childDocumentTitle.trim() ||
-      !!childBodyText.trim() ||
-      !!childMediaSummary.trim() ||
-      !!childLastError.trim();
+    return hasMeaningfulChildDiagnosticsSnapshot({
+      title: childDocumentTitle,
+      bodyText: childBodyText,
+      mediaSummary: childMediaSummary,
+      error: childLastError,
+    });
   }
 
   function shouldUsePlainLoopbackTransport(url: string, preferPlainLoopbackHost: boolean): boolean {
@@ -950,6 +996,7 @@
   /** Open a URL in the child webview. */
   async function navigate(url: string, options: NavigateOptions = {}) {
     showAccountMenu = false;
+    permissionPromptError = '';
     updateShellHash(null);
     settingsTab = null;
     const {
@@ -1077,6 +1124,7 @@
   async function goHome() {
     showMobileMenu = false;
     showAccountMenu = false;
+    permissionPromptError = '';
     updateShellHash(null);
     await destroyChildWebview();
     currentView = 'launcher';
@@ -1090,6 +1138,7 @@
   async function goSettings(tab: SettingsTabId | null = null, syncHash = true) {
     showMobileMenu = false;
     showAccountMenu = false;
+    permissionPromptError = '';
     if (syncHash) {
       updateShellHash(tab ? `/settings/${tab}` : '/settings');
     }
@@ -1495,7 +1544,15 @@
         (existing) => existing.requestId !== prompt.requestId,
       );
     } catch (error) {
-      permissionPromptError = formatWebviewError(error);
+      const message = formatWebviewError(error);
+      if (message.toLowerCase().includes('no longer pending')) {
+        permissionPromptQueue = permissionPromptQueue.filter(
+          (existing) => existing.requestId !== prompt.requestId,
+        );
+        permissionPromptError = '';
+      } else {
+        permissionPromptError = message;
+      }
     } finally {
       permissionPromptBusy = false;
       await pollNip07PermissionQueue();
@@ -1700,20 +1757,29 @@
   }
 
   function handleDiagnosticEvent(event: WebviewDiagnosticEvent) {
-    if (event.label !== CHILD_LABEL) return;
-    if (event.title) childDocumentTitle = event.title;
+    if (event.label !== CHILD_LABEL || currentView !== 'webview') return;
+    if (!isCurrentChildEventUrl(event.url)) return;
+    if (typeof event.title === 'string') childDocumentTitle = event.title;
     const detected = detectPwaFromDiagnostic(event);
     if (detected) detectedPwa = detected;
     if (event.title && currentUrl && isRecordableUrl(currentUrl)) {
       recordHistoryVisit(buildHistoryEntry(currentUrl, event.title))
         .catch((error) => console.warn('[Iris] record history failed:', error));
     }
-    if (event.bodyText) childBodyText = event.bodyText;
-    if (event.mediaSummary) childMediaSummary = event.mediaSummary;
+    if (typeof event.bodyText === 'string') childBodyText = event.bodyText;
+    if (typeof event.mediaSummary === 'string') childMediaSummary = event.mediaSummary;
     if (typeof event.viewportWidth === 'number') childViewportWidth = event.viewportWidth;
     if (typeof event.viewportHeight === 'number') childViewportHeight = event.viewportHeight;
     if (event.error && isFatalChildDiagnosticError(event.error, event.source)) {
       childLastError = event.error;
+      if (shouldRecoverCurrentHtreeResourceError(event)) {
+        void recoverHtreeWebview(currentUrl, {
+          reason: 'resource-error',
+          preferPlainLoopbackHost: true,
+        });
+      }
+    } else if (typeof event.error === 'string' && !event.error.trim()) {
+      childLastError = '';
     }
     if (event.bodyText && currentUrl) {
       void maybeRecoverSuggestedTreeRoot(currentUrl, event.bodyText);
