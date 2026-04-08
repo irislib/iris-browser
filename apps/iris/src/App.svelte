@@ -51,6 +51,7 @@
   import Nip07PermissionBar from './components/Nip07PermissionBar.svelte';
   import Settings from './components/Settings.svelte';
   import { minidenticon } from 'minidenticons';
+  import { nhashFromCidString } from './lib/nhash';
   import {
     clearClipboardIfUnchanged,
     sensitiveClipboardClearDelayMs,
@@ -65,6 +66,7 @@
   type ResolvedTreeRoot = {
     hash?: string | null;
     cid?: string | null;
+    nhash?: string | null;
   };
   type DetectedPwa = {
     sourceAppId?: string;
@@ -402,7 +404,10 @@
         });
         const payload = await response.json().catch(() => null) as ResolvedTreeRoot & { error?: string } | null;
         if (response.ok && !payload?.error) {
-          return payload;
+          return {
+            ...payload,
+            nhash: payload.nhash ?? nhashFromCidString(payload.cid) ?? nhashFromCidString(payload.hash),
+          };
         }
       } catch (error) {
         console.warn('[Iris] failed to refresh tree root:', npub, treename, formatWebviewError(error));
@@ -990,13 +995,25 @@
       builtInTreeRoot = await refreshTreeRoot(htree.npub, htree.treename);
     }
 
+    const htreeWebviewTarget = (
+      htree?.npub &&
+      htree.treename &&
+      builtInTreeRoot?.nhash
+    )
+      ? {
+          ...htree,
+          host: htree.npub,
+          nhash: builtInTreeRoot.nhash,
+        }
+      : htree;
+
     if (!g.__irisChildReady) {
       try {
-        if (htree) {
+        if (htreeWebviewTarget) {
           await createHtreeWebview(
             CHILD_LABEL,
             {
-              ...htree,
+              ...htreeWebviewTarget,
               cacheBust: builtInTreeRoot?.cid ?? builtInTreeRoot?.hash ?? undefined,
             },
             x,

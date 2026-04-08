@@ -129,7 +129,7 @@ export const defaultFavoriteApps: readonly AppBookmark[] = [];
 
 export const suggestedApps: readonly AppBookmark[] = [
   ...suggestedIrisApps,
-  { url: `htree://${distributedOwner}/hashtree-cc`, name: 'hashtree.cc', icon: '/hashtree-cc-favicon.svg', addedAt: 0 },
+  { url: 'https://hashtree.cc', name: 'hashtree.cc', icon: '/hashtree-cc-favicon.svg', addedAt: 0 },
 ];
 
 function normalizeBookmarkIcon(icon?: string): string | undefined {

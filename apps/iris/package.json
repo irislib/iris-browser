@@ -30,6 +30,7 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:native:linux:files": "node ./scripts/tauri-driver-linux-smoke.mjs",
+    "test:native:linux:suggestions": "IRIS_LAUNCHER_SMOKE_MODE=suggestions node ./scripts/tauri-driver-linux-smoke.mjs",
     "test:native:linux:nip07": "node ./scripts/tauri-driver-linux-nip07-smoke.mjs",
     "test:native:linux:nip07-live": "IRIS_NIP07_SMOKE_MODE=live node ./scripts/tauri-driver-linux-nip07-smoke.mjs",
     "test:native:linux:pwa-live": "node ./scripts/tauri-driver-linux-pwa-smoke.mjs",
@@ -37,6 +38,7 @@
     "test:native:linux:video": "node ./scripts/tauri-driver-linux-video-smoke.mjs",
     "test:native:linux": "pnpm run test:native:linux:files && pnpm run test:native:linux:video",
     "test:native:docker": "bash ./scripts/test-native-linux-docker.sh",
+    "test:native:docker:suggestions": "bash ./scripts/test-native-linux-docker.sh pnpm run test:native:linux:suggestions",
     "test:native:docker:nip07": "bash ./scripts/test-native-linux-docker.sh pnpm run test:native:linux:nip07",
     "test:native:docker:nip07-live": "bash ./scripts/test-native-linux-docker.sh pnpm run test:native:linux:nip07-live",
     "test:native:docker:pwa-live": "bash ./scripts/test-native-linux-docker.sh pnpm run test:native:linux:pwa-live"

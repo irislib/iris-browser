@@ -18,6 +18,24 @@ const distributedOwner = 'npub1xdhnr9mrv47kkrn95k6cwecearydeh8e895990n3acntwvmgk
 const defaultFilesUrl = `htree://${distributedOwner}/files`;
 const launcherIconsFavoriteSlug = process.env.IRIS_LAUNCHER_ICONS_FAVORITE_SLUG ?? 'iris-files';
 const launcherIconsFavoriteSrc = process.env.IRIS_LAUNCHER_ICONS_FAVORITE_SRC ?? '/iris-files-icon.svg';
+const launcherSuggestionMatrix = [
+  { slug: 'iris-audio', name: 'Iris Audio', treeName: 'audio', minBodyLength: 8 },
+  { slug: 'iris-files', name: 'Iris Files', treeName: 'files', minBodyLength: 8 },
+  { slug: 'iris-video', name: 'Iris Video', treeName: 'video', minBodyLength: 8 },
+  { slug: 'iris-docs', name: 'Iris Docs', treeName: 'docs', minBodyLength: 8 },
+  { slug: 'iris-git', name: 'Iris Git', treeName: 'git', minBodyLength: 8 },
+  { slug: 'iris-maps', name: 'Iris Maps', treeName: 'maps', minBodyLength: 8 },
+  { slug: 'iris-boards', name: 'Iris Boards', treeName: 'boards', minBodyLength: 8 },
+  { slug: 'iris-social', name: 'Iris Social', treeName: 'iris-client-site', minBodyLength: 8 },
+  { slug: 'iris-chat', name: 'Iris Chat', treeName: 'iris-chat-site', minBodyLength: 8 },
+  { slug: 'iris-meet', name: 'Iris Meet', treeName: 'meet', minBodyLength: 8 },
+  {
+    slug: 'hashtree-cc',
+    name: 'hashtree.cc',
+    externalUrlPrefixes: ['https://hashtree.cc', 'http://hashtree.cc'],
+    minBodyLength: 8,
+  },
+];
 
 let driverProcess = null;
 let sessionId = null;
@@ -93,6 +111,26 @@ async function waitForAutomationState(predicate, description, timeoutMs = 30000)
   }, description, timeoutMs);
 }
 
+async function getAutomationState() {
+  const response = await fetch(`${automationBase}/state`);
+  if (!response.ok) {
+    fail(`automation state returned ${response.status}`);
+  }
+  return await response.json();
+}
+
+async function postAutomationCommand(command) {
+  const response = await fetch(`${automationBase}/command`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(command),
+  });
+  if (!response.ok) {
+    const body = await response.text();
+    fail(`automation command failed: ${response.status} ${body}`);
+  }
+}
+
 async function createSession() {
   const payload = await request('POST', '/session', {
     capabilities: {
@@ -129,6 +167,14 @@ async function findElement(using, value) {
     fail(`WebDriver did not return an element id for ${using}=${value}`);
   }
   return elementId;
+}
+
+async function tryFindElement(using, value) {
+  try {
+    return await findElement(using, value);
+  } catch {
+    return null;
+  }
 }
 
 async function clickElement(elementId) {
@@ -244,6 +290,37 @@ function captureFramebufferToFile(importBinary, filename) {
   return false;
 }
 
+function xdotoolSearchByName(name) {
+  const result = spawnSync('xdotool', ['search', '--name', name], {
+    cwd: appDir,
+    env: process.env,
+    encoding: 'utf8',
+  });
+  if (result.status !== 0) {
+    return [];
+  }
+  return result.stdout.trim().split(/\s+/).filter(Boolean);
+}
+
+function xdotoolKey(windowId, key) {
+  const activate = spawnSync('xdotool', ['windowactivate', '--sync', windowId], {
+    cwd: appDir,
+    env: process.env,
+    encoding: 'utf8',
+  });
+  if (activate.status !== 0) {
+    fail(`xdotool failed to activate window ${windowId}: ${activate.stderr || activate.stdout}`);
+  }
+  const result = spawnSync('xdotool', ['key', '--window', windowId, key], {
+    cwd: appDir,
+    env: process.env,
+    encoding: 'utf8',
+  });
+  if (result.status !== 0) {
+    fail(`xdotool failed to send ${key}: ${result.stderr || result.stdout}`);
+  }
+}
+
 function maybeReexecUnderXvfb() {
   if (process.env.DISPLAY || process.env.__IRIS_NATIVE_UNDER_XVFB === '1') {
     return;
@@ -301,6 +378,134 @@ async function waitForWebDriver() {
   }, 'tauri-driver to be ready');
 }
 
+function currentUrlText(state) {
+  return typeof state.currentUrl === 'string' ? state.currentUrl : '';
+}
+
+function childPageLoadUrlText(state) {
+  return typeof state.childPageLoadUrl === 'string' ? state.childPageLoadUrl : '';
+}
+
+function childTitleText(state) {
+  return typeof state.childDocumentTitle === 'string' ? state.childDocumentTitle.trim() : '';
+}
+
+function childBodyText(state) {
+  return typeof state.childBodyText === 'string' ? state.childBodyText.trim() : '';
+}
+
+function childErrorText(state) {
+  return typeof state.childLastError === 'string' ? state.childLastError.trim() : '';
+}
+
+function currentUrlMatchesBuiltInTree(state, treeName) {
+  const currentUrl = currentUrlText(state);
+  const childPageLoadUrl = childPageLoadUrlText(state);
+  const encodedTreeName = encodeURIComponent(treeName);
+  return currentUrl === `htree://${distributedOwner}/${treeName}` ||
+    currentUrl === `htree://${distributedOwner}/${treeName}/` ||
+    currentUrl === `htree://${distributedOwner}/${treeName}/index.html` ||
+    currentUrl.includes(`/${treeName}/`) ||
+    currentUrl.endsWith(`/${treeName}`) ||
+    childPageLoadUrl.includes(`/${treeName}/`) ||
+    childPageLoadUrl.includes(`/${encodedTreeName}/`) ||
+    currentUrl.startsWith('htree://nhash1');
+}
+
+function currentUrlMatchesSuggestion(state, suggestion) {
+  if (suggestion.treeName) {
+    return currentUrlMatchesBuiltInTree(state, suggestion.treeName);
+  }
+
+  const currentUrl = currentUrlText(state);
+  const childPageLoadUrl = childPageLoadUrlText(state);
+  return (suggestion.externalUrlPrefixes ?? []).some((prefix) =>
+    currentUrl.startsWith(prefix) || childPageLoadUrl.startsWith(prefix)
+  );
+}
+
+function suggestionLoaded(state, suggestion) {
+  return state.currentView === 'webview' &&
+    state.childPageLoadState === 'finished' &&
+    !childErrorText(state) &&
+    currentUrlMatchesSuggestion(state, suggestion) &&
+    childTitleText(state).length > 0 &&
+    childBodyText(state).length >= suggestion.minBodyLength;
+}
+
+async function waitForSuggestionLoaded(suggestion, timeoutMs = 120000) {
+  let permissionPromptSeen = false;
+
+  return waitFor(async () => {
+    const state = await getAutomationState();
+    if (suggestionLoaded(state, suggestion)) {
+      return state;
+    }
+
+    const dialogWindow = xdotoolSearchByName('Account Access').at(-1) ?? null;
+    const domAllowButton = await tryFindElement(
+      'css selector',
+      "[data-testid='nip07-permission-allow-session']",
+    );
+    const requestId = typeof state.pendingNip07PromptRequestId === 'string'
+      ? state.pendingNip07PromptRequestId.trim()
+      : '';
+
+    if (dialogWindow || domAllowButton || requestId) {
+      if (!permissionPromptSeen) {
+        await takeScreenshot(`suggestion-${suggestion.slug}-permission.png`).catch(() => {});
+        permissionPromptSeen = true;
+      }
+
+      if (dialogWindow) {
+        xdotoolKey(dialogWindow, 'Return');
+      } else if (domAllowButton) {
+        await clickElement(domAllowButton);
+      } else if (requestId) {
+        await postAutomationCommand({
+          action: 'respond_nip07_prompt',
+          requestId,
+          decision: 'allowSession',
+        });
+      }
+      await new Promise((resolve) => setTimeout(resolve, 350));
+    }
+
+    fail(`waiting for ${suggestion.name} to finish loading, current state: ${JSON.stringify(state)}`);
+  }, `${suggestion.name} to finish loading without a white page`, timeoutMs);
+}
+
+async function runLauncherSuggestionsSmoke() {
+  for (const suggestion of launcherSuggestionMatrix) {
+    const openButton = await waitForElement(
+      'css selector',
+      `[data-testid='suggestion-open-${suggestion.slug}']`,
+      `${suggestion.name} launcher suggestion`,
+    );
+    await clickElement(openButton);
+
+    try {
+      const loadedState = await waitForSuggestionLoaded(suggestion);
+      await takeScreenshot(`suggestion-${suggestion.slug}.png`);
+      console.log(
+        `${suggestion.name}: ${currentUrlText(loadedState)} :: ${childTitleText(loadedState)} :: ${childBodyText(loadedState).slice(0, 160)}`,
+      );
+    } catch (error) {
+      await takeScreenshot(`suggestion-${suggestion.slug}-failed.png`).catch(() => {});
+      const state = await getAutomationState().catch(() => null);
+      const detail = state ? ` :: state=${JSON.stringify(state)}` : '';
+      fail(`${suggestion.name} failed launcher smoke${detail}`);
+    }
+
+    await postAutomationCommand({ action: 'home' });
+    await waitForAutomationState(
+      (state) => state.currentView === 'launcher' && currentUrlText(state) === '',
+      `${suggestion.name} to return home`,
+      30000,
+    );
+  }
+}
+
 async function main() {
   if (process.platform !== 'linux') {
     fail('This native smoke harness is Linux-only. Use Playwright web-shell tests or the automation bridge on macOS.');
@@ -345,6 +550,13 @@ async function main() {
       );
       await takeScreenshot('launcher-icons-favorite.png');
       console.log(`Launcher icon smoke passed. Screenshots written to ${artifactsDir}`);
+      return;
+    }
+
+    if (launcherSmokeMode === 'suggestions') {
+      await runLauncherSuggestionsSmoke();
+      await takeScreenshot('launcher-suggestions-returned.png');
+      console.log(`Launcher suggestions smoke passed. Screenshots written to ${artifactsDir}`);
       return;
     }
 

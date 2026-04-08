@@ -94,6 +94,18 @@ async function waitForAutomationState(predicate, description, timeoutMs = 30000)
   }, description, timeoutMs);
 }
 
+async function postAutomationCommand(command) {
+  const response = await fetch(`${automationBase}/command`, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify(command),
+  });
+  if (!response.ok) {
+    const body = await response.text();
+    fail(`automation command failed: ${response.status} ${body}`);
+  }
+}
+
 async function createSession() {
   const payload = await request('POST', '/session', {
     capabilities: {
@@ -130,6 +142,14 @@ async function findElement(using, value) {
     fail(`WebDriver did not return an element id for ${using}=${value}`);
   }
   return elementId;
+}
+
+async function tryFindElement(using, value) {
+  try {
+    return await findElement(using, value);
+  } catch {
+    return null;
+  }
 }
 
 async function clickElement(elementId) {
@@ -172,6 +192,37 @@ function captureFramebufferToFile(importBinary, filename) {
   }
   console.warn(`Framebuffer capture failed: ${result.stderr || result.stdout || result.status}`);
   return false;
+}
+
+function xdotoolSearchByName(name) {
+  const result = spawnSync('xdotool', ['search', '--name', name], {
+    cwd: appDir,
+    env: process.env,
+    encoding: 'utf8',
+  });
+  if (result.status !== 0) {
+    return [];
+  }
+  return result.stdout.trim().split(/\s+/).filter(Boolean);
+}
+
+function xdotoolKey(windowId, key) {
+  const activate = spawnSync('xdotool', ['windowactivate', '--sync', windowId], {
+    cwd: appDir,
+    env: process.env,
+    encoding: 'utf8',
+  });
+  if (activate.status !== 0) {
+    fail(`xdotool failed to activate window ${windowId}: ${activate.stderr || activate.stdout}`);
+  }
+  const result = spawnSync('xdotool', ['key', '--window', windowId, key], {
+    cwd: appDir,
+    env: process.env,
+    encoding: 'utf8',
+  });
+  if (result.status !== 0) {
+    fail(`xdotool failed to send ${key}: ${result.stderr || result.stdout}`);
+  }
 }
 
 function maybeReexecUnderXvfb() {
@@ -253,6 +304,48 @@ function socialContentLoaded(state) {
     state.childBodyText.trim().length > 20;
 }
 
+async function waitForSocialContentLoaded(timeoutMs = 120000) {
+  let permissionPromptSeen = false;
+
+  return waitFor(async () => {
+    const state = await getAutomationState();
+    if (currentUrlMatchesSocial(state) && socialContentLoaded(state)) {
+      return state;
+    }
+
+    const dialogWindow = xdotoolSearchByName('Account Access').at(-1) ?? null;
+    const domAllowButton = await tryFindElement(
+      'css selector',
+      "[data-testid='nip07-permission-allow-session']",
+    );
+    const requestId = typeof state.pendingNip07PromptRequestId === 'string'
+      ? state.pendingNip07PromptRequestId.trim()
+      : '';
+
+    if (dialogWindow || domAllowButton || requestId) {
+      if (!permissionPromptSeen) {
+        await takeScreenshot('social-permission.png').catch(() => {});
+        permissionPromptSeen = true;
+      }
+
+      if (dialogWindow) {
+        xdotoolKey(dialogWindow, 'Return');
+      } else if (domAllowButton) {
+        await clickElement(domAllowButton);
+      } else if (requestId) {
+        await postAutomationCommand({
+          action: 'respond_nip07_prompt',
+          requestId,
+          decision: 'allowSession',
+        });
+      }
+      await new Promise((resolve) => setTimeout(resolve, 350));
+    }
+
+    fail(`waiting for Iris Social content to finish loading through htree, current state: ${JSON.stringify(state)}`);
+  }, 'Iris Social content to finish loading through htree', timeoutMs);
+}
+
 async function main() {
   if (process.platform !== 'linux') {
     fail('This native smoke harness is Linux-only. Use the Docker wrapper or a Linux VM.');
@@ -297,11 +390,7 @@ async function main() {
     );
     await takeScreenshot('social-opened.png');
 
-    const loadedState = await waitForAutomationState(
-      socialContentLoaded,
-      'Iris Social content to finish loading through htree',
-      120000,
-    );
+    const loadedState = await waitForSocialContentLoaded(120000);
     await takeScreenshot('social-loaded.png');
 
     console.log('Social smoke current URL:', openedState.currentUrl);
