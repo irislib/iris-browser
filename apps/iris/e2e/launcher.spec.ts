@@ -159,6 +159,25 @@ test.describe('App Launcher', () => {
     expect(createCalls[0].args.path).toBe('/index.html');
   });
 
+  test('clicking Iris Chat suggestion opens the iris-chat-site tree once', async ({ tauriPage: page }) => {
+    await openHome(page);
+
+    const chatSuggestion = page.getByTestId('suggestion-open-iris-chat');
+    await expect(chatSuggestion).toHaveCount(1);
+    await chatSuggestion.click();
+
+    await expect.poll(async () => (await getInvocationsFor(page, 'create_htree_webview')).length).toBe(1);
+
+    const createCalls = await getInvocationsFor(page, 'create_htree_webview');
+
+    expect(createCalls.length).toBe(1);
+    expect(createCalls[0].args.host).toBe(distributedOwner);
+    expect(createCalls[0].args.nhash).toBeNull();
+    expect(createCalls[0].args.npub).toBe(distributedOwner);
+    expect(createCalls[0].args.treename).toBe('iris-chat-site');
+    expect(createCalls[0].args.path).toBe('/index.html');
+  });
+
   test('blank built-in suggestion load clears stale cache and recreates the webview once', async ({ tauriPage: page }) => {
     await openHome(page);
 

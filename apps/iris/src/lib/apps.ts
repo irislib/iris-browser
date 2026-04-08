@@ -72,6 +72,27 @@ function builtInAppUrl(treeName: string): string {
   return `htree://${distributedOwner}/${treeName}/index.html`;
 }
 
+const legacyBuiltInTreeNameRewrites: Record<string, string> = {
+  'iris-chat': 'iris-chat-site',
+};
+
+function rewriteLegacyBuiltInUrl(url: string): string {
+  const parsed = parseHtreeBookmarkUrl(url);
+  if (!parsed || parsed.host !== distributedOwner) {
+    return url;
+  }
+
+  const nextTreeName = legacyBuiltInTreeNameRewrites[parsed.treeName];
+  if (!nextTreeName) {
+    return url;
+  }
+
+  return url.replace(
+    `htree://${distributedOwner}/${parsed.treeName}`,
+    `htree://${distributedOwner}/${nextTreeName}`,
+  );
+}
+
 const builtInIrisTreeNames = new Set([
   'audio',
   'files',
@@ -83,6 +104,7 @@ const builtInIrisTreeNames = new Set([
   'iris-client',
   'iris-client-site',
   'iris-chat',
+  'iris-chat-site',
   'meet',
 ]);
 
@@ -99,7 +121,7 @@ export const suggestedIrisApps: readonly AppBookmark[] = [
   { url: builtInAppUrl('maps'), name: 'Iris Maps', icon: irisLauncherIcons.maps, addedAt: 0 },
   { url: builtInAppUrl('boards'), name: 'Iris Boards', icon: irisLauncherIcons.boards, addedAt: 0 },
   { url: builtInAppUrl('iris-client-site'), name: 'Iris Social', icon: '/iris-logo.png', addedAt: 0 },
-  { url: builtInAppUrl('iris-chat'), name: 'Iris Chat', icon: '/iris-logo.png', addedAt: 0 },
+  { url: builtInAppUrl('iris-chat-site'), name: 'Iris Chat', icon: '/iris-logo.png', addedAt: 0 },
   { url: builtInAppUrl('meet'), name: 'Iris Meet', icon: irisLauncherIcons.meet, addedAt: 0 },
 ];
 
@@ -121,8 +143,10 @@ function normalizeBookmarkField(value?: string): string | undefined {
 }
 
 export function normalizeBookmark(bookmark: AppBookmark): AppBookmark {
+  const normalizedUrl = rewriteLegacyBuiltInUrl(bookmark.url);
   return {
     ...bookmark,
+    url: normalizedUrl,
     name: bookmark.name.trim(),
     icon: normalizeBookmarkIcon(bookmark.icon),
     sourceAppId: normalizeBookmarkField(bookmark.sourceAppId),

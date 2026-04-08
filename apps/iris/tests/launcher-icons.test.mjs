@@ -29,7 +29,8 @@ test('iris launcher uses distinct icons for iris-files app suggestions', () => {
   }
 
   assert.match(appsSource, /\{ url: builtInAppUrl\('iris-client-site'\), name: 'Iris Social', icon: '\/iris-logo\.png'/);
-  assert.match(appsSource, /name: 'Iris Chat', icon: '\/iris-logo\.png'/);
+  assert.match(appsSource, /\{ url: builtInAppUrl\('iris-chat-site'\), name: 'Iris Chat', icon: '\/iris-logo\.png'/);
+  assert.match(appsSource, /'iris-chat': 'iris-chat-site'/);
   assert.match(appsSource, /name: 'Iris Audio', icon: irisLauncherIcons\.audio/);
   assert.match(appsSource, /name: 'Iris Meet', icon: irisLauncherIcons\.meet/);
 });
