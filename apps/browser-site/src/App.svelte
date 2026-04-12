@@ -17,7 +17,7 @@
     ctaLabel: string;
     size: number;
     sizeLabel: string;
-    platform: 'mac' | 'windows' | 'linux' | 'unknown';
+    platform: 'mac' | 'windows' | 'linux' | 'android' | 'unknown';
     arch: 'arm64' | 'x64' | 'unknown';
     priority: number;
     variantKey: string;
@@ -309,6 +309,15 @@
     return `${(size / (1024 * 1024)).toFixed(1)} MB`;
   }
 
+  function isDownloadableReleaseAsset(name: string): boolean {
+    return (
+      /macos-arm64\.zip$/i.test(name) ||
+      /windows-(x64|arm64)-setup\.exe$/i.test(name) ||
+      /linux-(x86_64|aarch64|arm64)\.(AppImage|deb)$/i.test(name) ||
+      /android-arm64\.apk$/i.test(name)
+    );
+  }
+
   function describeAsset(name: string): Omit<DownloadAsset, 'name' | 'href' | 'size' | 'sizeLabel'> {
     if (/macos-arm64\.zip$/i.test(name)) {
       return {
@@ -343,9 +352,20 @@
       };
     }
 
+    if (/android-arm64\.apk$/i.test(name)) {
+      return {
+        label: 'Android',
+        ctaLabel: 'Download for Android',
+        platform: 'android',
+        arch: 'arm64',
+        priority: 45,
+        variantKey: 'android-arm64-apk',
+      };
+    }
+
     if (/linux-x86_64\.AppImage$/i.test(name)) {
       return {
-        label: 'Linux AppImage',
+        label: 'Linux (portable AppImage)',
         ctaLabel: 'Download for Linux',
         platform: 'linux',
         arch: 'x64',
@@ -356,7 +376,7 @@
 
     if (/(linux-aarch64|linux-arm64)\.AppImage$/i.test(name)) {
       return {
-        label: 'Linux AppImage (ARM)',
+        label: 'Linux (portable AppImage, ARM)',
         ctaLabel: 'Download for Linux',
         platform: 'linux',
         arch: 'arm64',
@@ -367,7 +387,7 @@
 
     if (/linux-x86_64\.deb$/i.test(name)) {
       return {
-        label: 'Linux .deb',
+        label: 'Linux (Debian/Ubuntu)',
         ctaLabel: 'Download for Linux',
         platform: 'linux',
         arch: 'x64',
@@ -378,7 +398,7 @@
 
     if (/(linux-aarch64|linux-arm64)\.deb$/i.test(name)) {
       return {
-        label: 'Linux .deb (ARM)',
+        label: 'Linux (Debian/Ubuntu, ARM)',
         ctaLabel: 'Download for Linux',
         platform: 'linux',
         arch: 'arm64',
@@ -429,6 +449,8 @@
       ? 'mac'
       : platformSource.includes('win')
         ? 'windows'
+        : platformSource.includes('android')
+          ? 'android'
         : platformSource.includes('linux')
           ? 'linux'
           : 'unknown';
@@ -506,9 +528,9 @@
         };
 
         manifestTag = manifest.tag?.trim() ?? '';
-        manifestAssets = (manifest.assets ?? []).map((asset) =>
-          buildDownloadAsset(asset.name, `${releaseBaseUrl}/${asset.path}`, asset.size),
-        );
+        manifestAssets = (manifest.assets ?? [])
+          .filter((asset) => isDownloadableReleaseAsset(asset.name))
+          .map((asset) => buildDownloadAsset(asset.name, `${releaseBaseUrl}/${asset.path}`, asset.size));
       } catch (error) {
         console.warn('[browser-site] failed to load htree release manifest', error);
       }
@@ -531,7 +553,11 @@
         };
 
         githubAssets = (release.assets ?? [])
-          .filter((asset) => asset.state === 'uploaded' && !!asset.browser_download_url)
+          .filter((asset) =>
+            asset.state === 'uploaded' &&
+            !!asset.browser_download_url &&
+            isDownloadableReleaseAsset(asset.name),
+          )
           .map((asset) => buildDownloadAsset(asset.name, asset.browser_download_url!, asset.size));
       } catch (error) {
         console.warn('[browser-site] failed to load GitHub release assets', error);
@@ -573,7 +599,10 @@
       <div class="copy">
         <p class="brand">
           <img class="brand-mark" src={`${baseUrl}iris-mark.png`} alt="" width="18" height="18" />
-          <span>iris</span>
+          <span class="brand-text">
+            <span class="brand-name">iris</span>
+            <span class="brand-product">browser</span>
+          </span>
         </p>
         <h1>Sites, files, and apps should stay yours.</h1>
         <p class="lede">
@@ -896,7 +925,6 @@
   :global(:root) {
     color-scheme: light dark;
     --page-bg: #f5f5f5;
-    --page-glow: rgba(58, 124, 255, 0.08);
     --surface: rgba(255, 255, 255, 0.72);
     --surface-strong: rgba(255, 255, 255, 0.96);
     --surface-soft: rgba(255, 255, 255, 0.54);
@@ -904,16 +932,17 @@
     --text-1: #1a1a1a;
     --text-2: #555555;
     --text-3: #888888;
-    --accent: #3a7cff;
-    --accent-strong: #255fdd;
-    --accent-soft: rgba(58, 124, 255, 0.16);
+    --brand-accent: #916dfe;
+    --accent: var(--brand-accent);
+    --accent-strong: #7647fe;
+    --accent-soft: rgba(145, 109, 254, 0.18);
+    --page-glow: rgba(145, 109, 254, 0.1);
     --shadow: 0 18px 48px rgba(15, 15, 15, 0.08);
   }
 
   @media (prefers-color-scheme: dark) {
     :global(:root) {
       --page-bg: #0f0f0f;
-      --page-glow: rgba(58, 124, 255, 0.1);
       --surface: rgba(24, 24, 24, 0.74);
       --surface-strong: rgba(24, 24, 24, 0.96);
       --surface-soft: rgba(24, 24, 24, 0.54);
@@ -921,9 +950,11 @@
       --text-1: #ffffff;
       --text-2: #aaaaaa;
       --text-3: #7f7f7f;
-      --accent: #77aaff;
-      --accent-strong: #9bc0ff;
-      --accent-soft: rgba(119, 170, 255, 0.2);
+      --brand-accent: #916dfe;
+      --accent: var(--brand-accent);
+      --accent-strong: #a788ff;
+      --accent-soft: rgba(145, 109, 254, 0.24);
+      --page-glow: rgba(145, 109, 254, 0.12);
       --shadow: 0 24px 60px rgba(0, 0, 0, 0.2);
     }
   }
@@ -999,6 +1030,23 @@
     line-height: 1.1;
   }
 
+  .brand-text {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0.3rem;
+  }
+
+  .brand-name {
+    font-weight: inherit;
+  }
+
+  .brand-product {
+    color: var(--brand-accent);
+    font-size: 1em;
+    font-weight: inherit;
+    letter-spacing: inherit;
+  }
+
   .brand-mark {
     width: 2rem;
     height: 2rem;
@@ -1056,7 +1104,7 @@
     border-color: transparent;
     background: var(--accent);
     color: #fff;
-    box-shadow: 0 10px 28px rgba(58, 124, 255, 0.22);
+    box-shadow: 0 10px 28px rgba(145, 109, 254, 0.24);
   }
 
   .button.primary:hover {
@@ -1230,38 +1278,37 @@
 
   .benefits {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 0.9rem;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.95rem;
     margin-top: 2.35rem;
   }
 
   .benefit {
-    padding: 1rem 1.05rem;
-    border: 1px solid var(--border);
+    padding: 1.18rem 1.16rem 1.14rem;
     border-radius: 1.2rem;
-    background: var(--surface-soft);
-    backdrop-filter: blur(14px);
+    background: color-mix(in srgb, var(--surface-strong) 90%, transparent);
   }
 
   .benefit-head {
     display: flex;
-    align-items: center;
-    gap: 0.78rem;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.82rem;
   }
 
   .benefit-icon {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 2.15rem;
-    height: 2.15rem;
-    border-radius: 0.8rem;
+    width: 2.4rem;
+    height: 2.4rem;
+    border-radius: 0.88rem;
     flex: none;
   }
 
   .benefit-icon svg {
-    width: 1.1rem;
-    height: 1.1rem;
+    width: 1.16rem;
+    height: 1.16rem;
   }
 
   .benefit-icon.blue {
@@ -1328,16 +1375,22 @@
 
   .benefit h2 {
     margin: 0;
-    font-size: 1rem;
-    line-height: 1.35;
+    font-size: 1.02rem;
+    line-height: 1.32;
     letter-spacing: -0.02em;
   }
 
   .benefit p {
-    margin: 0.45rem 0 0;
+    margin: 0.62rem 0 0;
     color: var(--text-2);
     font-size: 0.94rem;
     line-height: 1.55;
+  }
+
+  @media (max-width: 1080px) {
+    .benefits {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
   }
 
   .footer {

@@ -45,6 +45,8 @@ test('build output contains the landing page title, copy, and screenshot assets'
   assert.doesNotMatch(html, /modulepreload/);
   assert.doesNotMatch(html, /crossorigin/);
   assert.match(jsBundle, /Iris/);
+  assert.match(jsBundle, /iris/);
+  assert.match(jsBundle, /browser/);
   assert.match(jsBundle, /Sites, files, and apps should stay yours\./);
   assert.match(jsBundle, /Open websites, apps, and files, keep working copies on your device, and share them without platform accounts getting in the way\./);
   assert.match(
@@ -73,6 +75,10 @@ test('build output contains the landing page title, copy, and screenshot assets'
   assert.match(jsBundle, /Browse the source/);
   assert.match(jsBundle, /iris-mark\.png/);
   assert.match(jsBundle, /Download for Mac/);
+  assert.match(jsBundle, /Download for Android/);
+  assert.match(jsBundle, /Android/);
+  assert.match(jsBundle, /Linux \(portable AppImage\)/);
+  assert.match(jsBundle, /Linux \(Debian\/Ubuntu\)/);
   assert.match(jsBundle, /Other downloads/);
   assert.match(jsBundle, /upload\.iris\.to/);
   assert.match(jsBundle, /releases%2Firis-browser\/latest/);
