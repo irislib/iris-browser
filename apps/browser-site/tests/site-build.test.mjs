@@ -29,6 +29,10 @@ test('build output contains the landing page title, copy, and screenshot assets'
     .filter((fileName) => fileName.endsWith('.js'))
     .map((fileName) => readFileSync(join(assetsDir, fileName), 'utf8'))
     .join('\n');
+  const cssBundle = readdirSync(assetsDir)
+    .filter((fileName) => fileName.endsWith('.css'))
+    .map((fileName) => readFileSync(join(assetsDir, fileName), 'utf8'))
+    .join('\n');
 
   assert.match(html, /browser\.iris\.to \| Iris Browser/);
   assert.match(
@@ -58,4 +62,8 @@ test('build output contains the landing page title, copy, and screenshot assets'
   assert.match(jsBundle, /browser-home\.png/);
   assert.match(jsBundle, /browser-jumble\.png/);
   assert.match(jsBundle, /browser-permission\.png/);
+  assert.match(cssBundle, /align-items:start/);
+  assert.match(cssBundle, /aspect-ratio:1964\s*\/\s*1464/);
+  assert.match(cssBundle, /min-height:5\.4rem/);
+  assert.match(cssBundle, /min-height:6\.2rem/);
 });

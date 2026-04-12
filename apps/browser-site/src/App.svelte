@@ -650,6 +650,8 @@
                     class="hero-shot"
                     src={screenshot.src}
                     alt={screenshot.alt}
+                    width="1964"
+                    height="1464"
                     loading={index === 0 ? 'eager' : 'lazy'}
                     draggable="false"
                   />
@@ -861,7 +863,7 @@
     display: grid;
     grid-template-columns: minmax(0, 0.88fr) minmax(360px, 1.12fr);
     gap: 2rem;
-    align-items: center;
+    align-items: start;
   }
 
   .copy {
@@ -987,6 +989,7 @@
   .viewport {
     overflow: hidden;
     border-radius: 1.45rem;
+    aspect-ratio: 1964 / 1464;
   }
 
   .track {
@@ -997,12 +1000,13 @@
   .slide {
     width: 100%;
     flex: 0 0 100%;
+    aspect-ratio: 1964 / 1464;
   }
 
   .hero-shot {
     display: block;
     width: 100%;
-    height: auto;
+    height: 100%;
     object-fit: contain;
     background: transparent;
   }
@@ -1049,6 +1053,7 @@
 
   .caption {
     padding: 0.95rem 0.1rem 0;
+    min-height: 5.4rem;
   }
 
   .caption-title {
@@ -1264,6 +1269,7 @@
 
     .caption {
       padding-top: 0.8rem;
+      min-height: 6.2rem;
     }
 
     .caption-title {
