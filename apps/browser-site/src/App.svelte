@@ -4,6 +4,7 @@
   const baseUrl = import.meta.env.BASE_URL;
   const sourceUrl =
     'https://git.iris.to/#/npub1xdhnr9mrv47kkrn95k6cwecearydeh8e895990n3acntwvmgk2dsdeeycm/iris-browser';
+  const hashtreeDevUrl = 'https://hashtree.cc/#/dev';
   const githubRepo = 'irislib/iris-browser';
   const releaseBaseUrl =
     'https://upload.iris.to/npub1xdhnr9mrv47kkrn95k6cwecearydeh8e895990n3acntwvmgk2dsdeeycm/releases%2Firis-browser/latest';
@@ -570,6 +571,10 @@
   <main class="content">
     <section class="hero">
       <div class="copy">
+        <p class="brand">
+          <img class="brand-mark" src={`${baseUrl}iris-mark.png`} alt="" width="18" height="18" />
+          <span>iris</span>
+        </p>
         <h1>Sites, files, and apps should stay yours.</h1>
         <p class="lede">
           Open websites, apps, and files, keep working copies on your device, and share them without
@@ -794,10 +799,96 @@
         </article>
       {/each}
     </section>
+
+    <section class="portable-apps" aria-labelledby="portable-apps-title">
+      <div class="portable-apps-copy">
+        <h2 id="portable-apps-title">Portable apps for everyday things</h2>
+        <p>
+          Docs, maps, chat, social, video, audio, files, and other apps can work as portable
+          sites you keep and move, not just services rented from one platform.
+        </p>
+      </div>
+
+      <div class="portable-app-grid">
+        <article class="portable-app-item">
+          <div class="portable-app-head">
+            <span class="portable-app-icon blue" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path
+                  d="M9 10V7.8A4.8 4.8 0 0 1 18.4 6M7.5 10h8a2 2 0 0 1 2 2v5.5a2 2 0 0 1-2 2h-8a2 2 0 0 1-2-2V12a2 2 0 0 1 2-2Zm9-6 2 2"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="1.8"
+                />
+              </svg>
+            </span>
+            <h3>No platform lock-in</h3>
+          </div>
+          <p>
+            Your app, data, identity, and network do not have to stay trapped in one company's
+            account system.
+          </p>
+        </article>
+
+        <article class="portable-app-item">
+          <div class="portable-app-head">
+            <span class="portable-app-icon green" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path
+                  d="M7 4.5h7l3 3V19a1.5 1.5 0 0 1-1.5 1.5h-8A1.5 1.5 0 0 1 6 19V6A1.5 1.5 0 0 1 7.5 4.5H7Zm5 0V8h4M9 13l2 2 4-4"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="1.8"
+                />
+              </svg>
+            </span>
+            <h3>Saved copies keep working</h3>
+          </div>
+          <p>
+            If a host changes the rules or disappears, the copy you kept can still open.
+          </p>
+        </article>
+
+        <article class="portable-app-item">
+          <div class="portable-app-head">
+            <span class="portable-app-icon violet" aria-hidden="true">
+              <svg viewBox="0 0 24 24">
+                <path
+                  d="M15 5h4v4M9 15l10-10M5 8.5V18a1 1 0 0 0 1 1h9.5"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="1.8"
+                />
+              </svg>
+            </span>
+            <h3>Open distribution</h3>
+          </div>
+          <p>
+            Apps can be shared directly, without app-store approval or mandatory email, phone, or
+            Google/Apple sign-ins.
+          </p>
+        </article>
+      </div>
+    </section>
   </main>
 
   <footer class="footer">
-    <a href={sourceUrl}>Source code</a>
+    <div class="footer-copy">
+      <p class="footer-kicker">Free software</p>
+      <p class="footer-body">
+        Iris is open source under the MIT license and built to serve its users, not monetize them.
+      </p>
+      <p class="footer-meta">
+        <a href={hashtreeDevUrl}>Built on Hashtree</a>
+      </p>
+    </div>
+    <a class="footer-link" href={sourceUrl}>Browse the source</a>
   </footer>
 </div>
 
@@ -894,6 +985,25 @@
     line-height: 0.93;
     letter-spacing: -0.05em;
     text-wrap: balance;
+  }
+
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.56rem;
+    margin: 0 0 1.22rem;
+    color: var(--text-1);
+    font-size: 1.72rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+  }
+
+  .brand-mark {
+    width: 2rem;
+    height: 2rem;
+    border-radius: 0.5rem;
+    flex: none;
   }
 
   .lede {
@@ -1231,19 +1341,176 @@
   }
 
   .footer {
-    display: flex;
-    justify-content: flex-end;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    gap: 1.25rem;
     padding: 0 0 1.5rem;
   }
 
-  .footer a {
+  .portable-apps {
+    margin-top: 2.4rem;
+    padding: 1.35rem 1.25rem;
+    border-radius: 1.45rem;
+    background:
+      radial-gradient(circle at top right, color-mix(in srgb, var(--accent-soft) 68%, transparent), transparent 42%),
+      color-mix(in srgb, var(--surface) 92%, transparent);
+    backdrop-filter: blur(16px);
+  }
+
+  .portable-apps-copy {
+    max-width: 44rem;
+  }
+
+  .portable-apps-copy h2 {
+    margin: 0;
+    font-size: clamp(1.5rem, 3vw, 2rem);
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+  }
+
+  .portable-apps-copy p {
+    margin: 0.65rem 0 0;
+    color: var(--text-2);
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+
+  .portable-app-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.85rem;
+    margin-top: 1.2rem;
+  }
+
+  .portable-app-item {
+    padding: 1rem;
+    border-radius: 1.05rem;
+    background: color-mix(in srgb, var(--surface-strong) 90%, transparent);
+  }
+
+  .portable-app-head {
+    display: flex;
+    align-items: center;
+    gap: 0.72rem;
+  }
+
+  .portable-app-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.2rem;
+    height: 2.2rem;
+    border-radius: 0.82rem;
+    flex: none;
+  }
+
+  .portable-app-icon svg {
+    width: 1.1rem;
+    height: 1.1rem;
+  }
+
+  .portable-app-icon.blue {
+    color: #2d6df6;
+    background: rgba(45, 109, 246, 0.14);
+  }
+
+  .portable-app-icon.green {
+    color: #1d9159;
+    background: rgba(29, 145, 89, 0.14);
+  }
+
+  .portable-app-icon.violet {
+    color: #7052d7;
+    background: rgba(112, 82, 215, 0.14);
+  }
+
+  .portable-app-item h3 {
+    margin: 0;
+    font-size: 0.98rem;
+    line-height: 1.35;
+    letter-spacing: -0.02em;
+  }
+
+  .portable-app-item p {
+    margin: 0.45rem 0 0;
+    color: var(--text-2);
+    font-size: 0.93rem;
+    line-height: 1.55;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .portable-app-icon.blue {
+      color: #8bb3ff;
+      background: rgba(119, 170, 255, 0.16);
+    }
+
+    .portable-app-icon.green {
+      color: #73d29c;
+      background: rgba(67, 177, 117, 0.18);
+    }
+
+    .portable-app-icon.violet {
+      color: #b79dff;
+      background: rgba(183, 157, 255, 0.16);
+    }
+  }
+
+  .footer-copy {
+    max-width: 33rem;
+  }
+
+  .footer-kicker {
+    margin: 0;
+    color: var(--text-3);
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+  }
+
+  .footer-body {
+    margin: 0.4rem 0 0;
+    color: var(--text-2);
+    font-size: 0.95rem;
+    line-height: 1.55;
+  }
+
+  .footer-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+    margin: 0.55rem 0 0;
+    color: var(--text-3);
+    font-size: 0.84rem;
+    line-height: 1.45;
+  }
+
+  .footer-meta a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .footer-meta a:hover {
+    color: var(--text-1);
+  }
+
+  .footer-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    justify-self: end;
+    min-height: 2.25rem;
+    padding: 0.5rem 0.82rem;
+    border-radius: 999px;
+    background: color-mix(in srgb, var(--surface) 88%, transparent);
     color: var(--text-2);
     text-decoration: none;
     font-size: 0.95rem;
     font-weight: 500;
   }
 
-  .footer a:hover {
+  .footer-link:hover {
     color: var(--text-1);
   }
 
@@ -1264,6 +1531,15 @@
     .benefits {
       grid-template-columns: 1fr;
       margin-top: 1.9rem;
+    }
+
+    .portable-app-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .footer {
+      grid-template-columns: 1fr;
+      gap: 0.85rem;
     }
   }
 
@@ -1306,6 +1582,11 @@
 
     .benefit {
       padding: 0.95rem 1rem;
+    }
+
+    .portable-apps {
+      margin-top: 2rem;
+      padding: 1.1rem 1rem;
     }
 
     .footer {

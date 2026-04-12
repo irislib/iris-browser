@@ -44,6 +44,7 @@ test('build output contains the landing page title, copy, and screenshot assets'
   assert.doesNotMatch(html, /src="\/assets\//);
   assert.doesNotMatch(html, /modulepreload/);
   assert.doesNotMatch(html, /crossorigin/);
+  assert.match(jsBundle, /Iris/);
   assert.match(jsBundle, /Sites, files, and apps should stay yours\./);
   assert.match(jsBundle, /Open websites, apps, and files, keep working copies on your device, and share them without platform accounts getting in the way\./);
   assert.match(
@@ -61,6 +62,16 @@ test('build output contains the landing page title, copy, and screenshot assets'
     /Use the same profile, contacts, and follows across apps when you want to, without tying them to a single platform account\./,
   );
   assert.match(jsBundle, /Bring your network with you/);
+  assert.match(jsBundle, /Portable apps for everyday things/);
+  assert.match(jsBundle, /No platform lock-in/);
+  assert.match(jsBundle, /Saved copies keep working/);
+  assert.match(jsBundle, /Open distribution/);
+  assert.match(jsBundle, /Free software/);
+  assert.match(jsBundle, /open source under the MIT license and built to serve its users, not monetize them\./);
+  assert.match(jsBundle, /Built on Hashtree/);
+  assert.match(jsBundle, /hashtree\.cc\/#\/dev/);
+  assert.match(jsBundle, /Browse the source/);
+  assert.match(jsBundle, /iris-mark\.png/);
   assert.match(jsBundle, /Download for Mac/);
   assert.match(jsBundle, /Other downloads/);
   assert.match(jsBundle, /upload\.iris\.to/);
