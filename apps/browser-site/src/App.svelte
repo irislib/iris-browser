@@ -562,7 +562,7 @@
   <title>browser.iris.to | Iris Browser</title>
   <meta
     name="description"
-    content="Open websites and apps, keep working copies on your device, and share them without making everyone sign up first."
+    content="Open websites, apps, and files, keep working copies on your device, and share them without making everyone sign up first."
   />
 </svelte:head>
 
@@ -572,7 +572,7 @@
       <div class="copy">
         <h1>Sites, files, and apps should stay yours.</h1>
         <p class="lede">
-          Open websites and apps, keep working copies on your device, and share them without making
+          Open websites, apps, and files, keep working copies on your device, and share them without making
           everyone sign up first. Iris turns links into portable things you can reopen, move between
           devices, and keep using when one platform disappears or changes the rules.
         </p>

@@ -37,7 +37,7 @@ test('build output contains the landing page title, copy, and screenshot assets'
   assert.match(html, /browser\.iris\.to \| Iris Browser/);
   assert.match(
     html,
-    /Open websites and apps, keep working copies on your device, and share them without making everyone sign up first\./,
+    /Open websites, apps, and files, keep working copies on your device, and share them without making everyone sign up first\./,
   );
   assert.match(html, /href="\.\/iris-favicon\.png"/);
   assert.match(html, /src="\.\/assets\//);
@@ -45,7 +45,7 @@ test('build output contains the landing page title, copy, and screenshot assets'
   assert.doesNotMatch(html, /modulepreload/);
   assert.doesNotMatch(html, /crossorigin/);
   assert.match(jsBundle, /Sites, files, and apps should stay yours\./);
-  assert.match(jsBundle, /Open websites and apps, keep working copies on your device, and share them without making everyone sign up first\./);
+  assert.match(jsBundle, /Open websites, apps, and files, keep working copies on your device, and share them without making everyone sign up first\./);
   assert.match(
     jsBundle,
     /Iris turns links into portable things you can reopen,\s+move between\s+devices, and keep using when one platform disappears or changes the rules\./,
