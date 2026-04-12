@@ -73,10 +73,20 @@ function builtInAppUrl(treeName: string): string {
 }
 
 const legacyBuiltInTreeNameRewrites: Record<string, string> = {
+  'hashtree-cc': 'hashtree-cc-site',
   'iris-chat': 'iris-chat-site',
 };
 
 function rewriteLegacyBuiltInUrl(url: string): string {
+  try {
+    const parsed = new URL(url);
+    if ((parsed.protocol === 'http:' || parsed.protocol === 'https:') && (parsed.hostname === 'hashtree.cc' || parsed.hostname === 'www.hashtree.cc')) {
+      return builtInAppUrl('hashtree-cc-site');
+    }
+  } catch {
+    // Continue with htree-specific rewrites below.
+  }
+
   const parsed = parseHtreeBookmarkUrl(url);
   if (!parsed || parsed.host !== distributedOwner) {
     return url;
@@ -129,7 +139,13 @@ export const defaultFavoriteApps: readonly AppBookmark[] = [];
 
 export const suggestedApps: readonly AppBookmark[] = [
   ...suggestedIrisApps,
-  { url: 'https://hashtree.cc', name: 'hashtree.cc', icon: '/hashtree-cc-favicon.svg', addedAt: 0 },
+  {
+    url: builtInAppUrl('hashtree-cc-site'),
+    sourceUrl: builtInAppUrl('hashtree-cc-site'),
+    name: 'hashtree.cc',
+    icon: '/hashtree-cc-favicon.svg',
+    addedAt: 0,
+  },
 ];
 
 function normalizeBookmarkIcon(icon?: string): string | undefined {
@@ -144,13 +160,14 @@ function normalizeBookmarkField(value?: string): string | undefined {
 
 export function normalizeBookmark(bookmark: AppBookmark): AppBookmark {
   const normalizedUrl = rewriteLegacyBuiltInUrl(bookmark.url);
+  const normalizedSourceUrl = bookmark.sourceUrl ? rewriteLegacyBuiltInUrl(bookmark.sourceUrl) : undefined;
   return {
     ...bookmark,
     url: normalizedUrl,
     name: bookmark.name.trim(),
     icon: normalizeBookmarkIcon(bookmark.icon),
     sourceAppId: normalizeBookmarkField(bookmark.sourceAppId),
-    sourceUrl: normalizeBookmarkField(bookmark.sourceUrl),
+    sourceUrl: normalizeBookmarkField(normalizedSourceUrl),
     sourceManifestUrl: normalizeBookmarkField(bookmark.sourceManifestUrl),
   };
 }
@@ -187,7 +204,7 @@ function humanizeTreeName(treeName: string): string {
   if (!treeName) return '';
   if (treeName === 'iris-client' || treeName === 'iris-client-site') return 'Social';
   if (treeName === 'iris-chat') return 'Chat';
-  if (treeName === 'hashtree-cc') return 'hashtree.cc';
+  if (treeName === 'hashtree-cc' || treeName === 'hashtree-cc-site') return 'hashtree.cc';
   return titleCaseWords(treeName);
 }
 

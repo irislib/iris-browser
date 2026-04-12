@@ -32,7 +32,7 @@ const launcherSuggestionMatrix = [
   {
     slug: 'hashtree-cc',
     name: 'hashtree.cc',
-    externalUrlPrefixes: ['https://hashtree.cc', 'http://hashtree.cc'],
+    treeName: 'hashtree-cc-site',
     minBodyLength: 8,
   },
 ];

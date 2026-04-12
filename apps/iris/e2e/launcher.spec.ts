@@ -138,6 +138,21 @@ test.describe('App Launcher', () => {
     expect(createCalls[0].args.path).toBe('/index.html');
   });
 
+  test('clicking hashtree.cc suggestion opens the hashtree-cc-site tree', async ({ tauriPage: page }) => {
+    await openHome(page);
+
+    await suggestionButton(page, 'hashtree-cc').click();
+
+    await expect.poll(async () => (await getInvocationsFor(page, 'create_htree_webview')).length).toBe(1);
+    const createCalls = await getInvocationsFor(page, 'create_htree_webview');
+    expect(createCalls.length).toBe(1);
+    expect(createCalls[0].args.host).toBe(distributedOwner);
+    expect(createCalls[0].args.nhash).toBeNull();
+    expect(createCalls[0].args.npub).toBe(distributedOwner);
+    expect(createCalls[0].args.treename).toBe('hashtree-cc-site');
+    expect(createCalls[0].args.path).toBe('/index.html');
+  });
+
   test('clicking Iris Social suggestion opens the iris-client-site tree once', async ({ tauriPage: page }) => {
     await openHome(page);
 
