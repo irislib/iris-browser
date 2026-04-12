@@ -9,8 +9,13 @@ It contains the Iris Tauri app under `apps/iris`. The embedded daemon uses the
 published Hashtree Rust crates through Cargo. The `browser.iris.to` landing site
 lives in `apps/browser-site`.
 
+For portable apps that should run both on the web and inside Iris Browser, use
+[`@hashtree/worker`](https://www.npmjs.com/package/@hashtree/worker). Its source
+lives in the Hashtree TypeScript workspace under
+[`hashtree/ts/packages/hashtree-worker`](https://git.iris.to/#/npub1xdhnr9mrv47kkrn95k6cwecearydeh8e895990n3acntwvmgk2dsdeeycm/hashtree/ts/packages/hashtree-worker).
+
 For app/runtime compatibility details, including the `window.__HTREE_*` bridge
-and portable `sites.iris.to` build rules, see
+and portable `sites.iris.to` build rules, see the Iris app docs in
 [`apps/iris/README.md`](/Users/sirius/src/iris-browser/apps/iris/README.md).
 
 ## Layout
