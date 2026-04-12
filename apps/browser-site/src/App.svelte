@@ -66,33 +66,33 @@
     {
       src: `${baseUrl}browser-home.png`,
       alt: 'Iris Browser home screen with favorites and suggestions',
-      title: 'A calm place to start',
-      body: 'Favorites and useful places stay close instead of getting buried.',
+      title: 'Useful places stay close',
+      body: 'Favorites and recent places stay easy to reopen instead of getting buried.',
     },
     {
       src: `${baseUrl}browser-jumble.png`,
       alt: 'Iris Browser opening a shared website',
-      title: 'Shared websites feel easy to revisit',
-      body: 'A site someone sends you does not have to disappear into chat history.',
+      title: 'Shared sites stay easy to revisit',
+      body: 'A site or app someone sends you does not have to disappear into chat history or one dead link.',
     },
     {
       src: `${baseUrl}browser-permission.png`,
       alt: 'Iris Browser asking before a website uses your account',
-      title: 'You stay in control',
+      title: 'Your account stays yours',
       body: 'If a website wants your account, Iris asks first.',
     },
   ];
 
   const benefits: Benefit[] = [
     {
-      title: 'Publish websites for free',
-      body: 'Share a page without paying for hosting or leaning on a big platform.',
+      title: 'Own what you keep',
+      body: 'Sites and files stay portable instead of being trapped inside one platform or login.',
       icon: 'globe',
       tone: 'blue',
     },
     {
-      title: 'Save websites for offline use',
-      body: 'Keep useful pages ready for later, even when the signal drops.',
+      title: 'Keep important things locally',
+      body: 'Save sites and apps on your device so they are still there when the signal or the service is not.',
       icon: 'download',
       tone: 'green',
     },
@@ -103,14 +103,14 @@
       tone: 'amber',
     },
     {
-      title: 'Send files without the usual friction',
-      body: 'Keep sharing simple instead of fighting upload steps and account walls.',
+      title: 'Share without extra accounts',
+      body: 'No email, no phone number, no extra account when you just want someone to open what you shared.',
       icon: 'share',
       tone: 'violet',
     },
     {
-      title: 'Skip email, phone, and extra accounts',
-      body: 'People can open what you share without signing up for one more service first.',
+      title: 'Ask before using your account',
+      body: 'If a site wants your account, Iris asks first instead of taking it for granted.',
       icon: 'user',
       tone: 'rose',
     },
@@ -556,7 +556,7 @@
   <title>browser.iris.to | Iris Browser</title>
   <meta
     name="description"
-    content="Publish websites for free, keep them ready offline, share them nearby, and skip extra accounts."
+    content="Open websites and apps, keep them locally, share without extra accounts, and stay less dependent on any single platform."
   />
 </svelte:head>
 
@@ -564,10 +564,10 @@
   <main class="content">
     <section class="hero">
       <div class="copy">
-        <h1>Websites should work anywhere.</h1>
+        <h1>Sites, files, and apps should stay yours.</h1>
         <p class="lede">
-          Open what matters, keep it close, and share it directly, whether you are online,
-          offline, or passing something to the person next to you.
+          Open what matters, keep it locally, and share it without email, phone, or extra accounts.
+          Iris Browser keeps data portable so you are less dependent on any single platform staying online or saying yes.
         </p>
 
         <div class="actions">
@@ -591,7 +591,7 @@
               aria-expanded={showAllDownloads}
               onclick={() => (showAllDownloads = !showAllDownloads)}
             >
-              {showAllDownloads ? 'Hide options' : 'More options'}
+              {showAllDownloads ? 'Hide downloads' : 'Other downloads'}
             </button>
           {/if}
         </div>
@@ -777,7 +777,7 @@
   </main>
 
   <footer class="footer">
-    <a href={sourceUrl}>Source</a>
+    <a href={sourceUrl}>Source code</a>
   </footer>
 </div>
 

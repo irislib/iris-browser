@@ -33,22 +33,22 @@ test('build output contains the landing page title, copy, and screenshot assets'
   assert.match(html, /browser\.iris\.to \| Iris Browser/);
   assert.match(
     html,
-    /Publish websites for free, keep them ready offline, share them nearby, and skip extra accounts\./,
+    /Open websites and apps, keep them locally, share without extra accounts, and stay less dependent on any single platform\./,
   );
   assert.match(html, /href="\.\/iris-favicon\.png"/);
   assert.match(html, /src="\.\/assets\//);
   assert.doesNotMatch(html, /src="\/assets\//);
   assert.doesNotMatch(html, /modulepreload/);
   assert.doesNotMatch(html, /crossorigin/);
-  assert.match(jsBundle, /Websites should work anywhere\./);
-  assert.match(jsBundle, /Open what matters, keep it close, and share it directly/);
-  assert.match(jsBundle, /Publish websites for free/);
-  assert.match(jsBundle, /Save websites for offline use/);
+  assert.match(jsBundle, /Sites, files, and apps should stay yours\./);
+  assert.match(jsBundle, /Open what matters, keep it locally, and share it without email, phone, or extra accounts\./);
+  assert.match(jsBundle, /Own what you keep/);
+  assert.match(jsBundle, /Keep important things locally/);
   assert.match(jsBundle, /Share to nearby devices over Wi-Fi/);
-  assert.match(jsBundle, /Send files without the usual friction/);
-  assert.match(jsBundle, /Skip email, phone, and extra accounts/);
+  assert.match(jsBundle, /Share without extra accounts/);
+  assert.match(jsBundle, /Ask before using your account/);
   assert.match(jsBundle, /Download for Mac/);
-  assert.match(jsBundle, /More options/);
+  assert.match(jsBundle, /Other downloads/);
   assert.match(jsBundle, /upload\.iris\.to/);
   assert.match(jsBundle, /releases%2Firis-browser\/latest/);
   assert.match(jsBundle, /release\.json/);
