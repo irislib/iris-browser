@@ -567,7 +567,7 @@
         <h1>Sites, files, and apps should stay yours.</h1>
         <p class="lede">
           Open what matters, keep it locally, and share it without email, phone, or extra accounts.
-          Iris Browser keeps data portable so you are less dependent on any single platform staying online or saying yes.
+          From docs and maps to video, audio, and files, the same portable app model keeps you less dependent on any single platform staying online or saying yes.
         </p>
 
         <div class="actions">

@@ -46,6 +46,7 @@ test('build output contains the landing page title, copy, and screenshot assets'
   assert.doesNotMatch(html, /crossorigin/);
   assert.match(jsBundle, /Sites, files, and apps should stay yours\./);
   assert.match(jsBundle, /Open what matters, keep it locally, and share it without email, phone, or extra accounts\./);
+  assert.match(jsBundle, /From docs and maps to video, audio, and files, the same portable app model/);
   assert.match(jsBundle, /Own what you keep/);
   assert.match(jsBundle, /Keep important things locally/);
   assert.match(jsBundle, /Share to nearby devices over Wi-Fi/);
