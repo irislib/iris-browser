@@ -45,8 +45,8 @@
   type Benefit = {
     title: string;
     body: string;
-    icon: 'globe' | 'download' | 'wifi' | 'share' | 'user';
-    tone: 'blue' | 'green' | 'amber' | 'violet' | 'rose';
+    icon: 'globe' | 'download' | 'bookmark' | 'wifi' | 'share' | 'user';
+    tone: 'blue' | 'green' | 'teal' | 'amber' | 'violet' | 'rose';
   };
 
   const fallbackAsset: DownloadAsset = {
@@ -66,51 +66,57 @@
     {
       src: `${baseUrl}browser-home.png`,
       alt: 'Iris Browser home screen with favorites and suggestions',
-      title: 'Useful places stay close',
-      body: 'Favorites and recent places stay easy to reopen instead of getting buried.',
+      title: 'Sites can live like apps',
+      body: 'Keep useful sites on your home screen like apps, without waiting for an app store or platform to approve them.',
     },
     {
       src: `${baseUrl}browser-jumble.png`,
       alt: 'Iris Browser opening a shared website',
-      title: 'Shared sites stay easy to revisit',
-      body: 'A site or app someone sends you does not have to disappear into chat history or one dead link.',
+      title: 'Shared links become reusable',
+      body: 'A site or app someone sends you can stay on hand as something you reopen, not one message lost in chat.',
     },
     {
       src: `${baseUrl}browser-permission.png`,
       alt: 'Iris Browser asking before a website uses your account',
-      title: 'Your account stays yours',
-      body: 'If a website wants your account, Iris asks first.',
+      title: 'Your identity works across apps',
+      body: 'Use the same account across apps instead of starting over with a new login and an empty profile each time.',
     },
   ];
 
   const benefits: Benefit[] = [
     {
-      title: 'Own what you keep',
-      body: 'Sites and files stay portable instead of being trapped inside one platform or login.',
+      title: 'Keep a copy, not just a link',
+      body: 'Sites and files stay portable instead of being trapped behind one host, app, or login.',
       icon: 'globe',
       tone: 'blue',
     },
     {
-      title: 'Keep important things locally',
-      body: 'Save sites and apps on your device so they are still there when the signal or the service is not.',
+      title: 'Save what matters locally',
+      body: 'Keep sites and apps on your device so bad signal, travel, or outages do not cut you off.',
       icon: 'download',
       tone: 'green',
     },
     {
-      title: 'Share to nearby devices over Wi-Fi',
-      body: 'Pass a site or file across the room without sending it the long way around.',
+      title: 'Reopen what people send',
+      body: 'Shared sites, apps, and files stay easy to find again instead of vanishing into chat history.',
+      icon: 'bookmark',
+      tone: 'teal',
+    },
+    {
+      title: 'Share over local Wi-Fi',
+      body: 'Pass a site or file to a nearby device directly instead of sending it the long way around.',
       icon: 'wifi',
       tone: 'amber',
     },
     {
-      title: 'Share without extra accounts',
-      body: 'No email, no phone number, no extra account when you just want someone to open what you shared.',
+      title: 'Share first, sign up later',
+      body: 'People can open what you sent without creating an account before they even know if they want it.',
       icon: 'share',
       tone: 'violet',
     },
     {
-      title: 'Ask before using your account',
-      body: 'If a site wants your account, Iris asks first instead of taking it for granted.',
+      title: 'Reuse one account across apps',
+      body: 'Your sign-in and profile can move with you instead of being locked to one platform or rebuilt from scratch.',
       icon: 'user',
       tone: 'rose',
     },
@@ -556,7 +562,7 @@
   <title>browser.iris.to | Iris Browser</title>
   <meta
     name="description"
-    content="Open websites and apps, keep them locally, share without extra accounts, and stay less dependent on any single platform."
+    content="Open websites and apps, keep working copies on your device, and share them without making everyone sign up first."
   />
 </svelte:head>
 
@@ -566,8 +572,9 @@
       <div class="copy">
         <h1>Sites, files, and apps should stay yours.</h1>
         <p class="lede">
-          Open what matters, keep it locally, and share it without email, phone, or extra accounts.
-          From docs and maps to video, audio, and files, the same portable app model keeps you less dependent on any single platform staying online or saying yes.
+          Open websites and apps, keep working copies on your device, and share them without making
+          everyone sign up first. Iris turns links into portable things you can reopen, move between
+          devices, and keep using when one platform disappears or changes the rules.
         </p>
 
         <div class="actions">
@@ -728,6 +735,17 @@
                 <svg viewBox="0 0 24 24">
                   <path
                     d="M12 4v9m0 0 3.5-3.5M12 13 8.5 9.5M5 18h14"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="1.8"
+                  />
+                </svg>
+              {:else if item.icon === 'bookmark'}
+                <svg viewBox="0 0 24 24">
+                  <path
+                    d="M7 4.5A1.5 1.5 0 0 1 8.5 3h7A1.5 1.5 0 0 1 17 4.5V20l-5-3-5 3V4.5Z"
                     fill="none"
                     stroke="currentColor"
                     stroke-linecap="round"
@@ -1146,6 +1164,11 @@
     background: rgba(29, 145, 89, 0.14);
   }
 
+  .benefit-icon.teal {
+    color: #0d8c9f;
+    background: rgba(13, 140, 159, 0.14);
+  }
+
   .benefit-icon.amber {
     color: #b06a00;
     background: rgba(225, 151, 33, 0.16);
@@ -1170,6 +1193,11 @@
     .benefit-icon.green {
       color: #73d29c;
       background: rgba(67, 177, 117, 0.18);
+    }
+
+    .benefit-icon.teal {
+      color: #78d7e3;
+      background: rgba(74, 181, 195, 0.18);
     }
 
     .benefit-icon.amber {
