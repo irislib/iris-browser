@@ -37,7 +37,7 @@ test('build output contains the landing page title, copy, and screenshot assets'
   assert.match(html, /browser\.iris\.to \| Iris Browser/);
   assert.match(
     html,
-    /Open websites, apps, and files, keep working copies on your device, and share them without making everyone sign up first\./,
+    /Open websites, apps, and files, keep working copies on your device, and share them without platform accounts getting in the way\./,
   );
   assert.match(html, /href="\.\/iris-favicon\.png"/);
   assert.match(html, /src="\.\/assets\//);
@@ -45,7 +45,7 @@ test('build output contains the landing page title, copy, and screenshot assets'
   assert.doesNotMatch(html, /modulepreload/);
   assert.doesNotMatch(html, /crossorigin/);
   assert.match(jsBundle, /Sites, files, and apps should stay yours\./);
-  assert.match(jsBundle, /Open websites, apps, and files, keep working copies on your device, and share them without making everyone sign up first\./);
+  assert.match(jsBundle, /Open websites, apps, and files, keep working copies on your device, and share them without platform accounts getting in the way\./);
   assert.match(
     jsBundle,
     /Iris turns links into portable things you can reopen,\s+move between\s+devices, and keep using when one platform disappears or changes the rules\./,
@@ -54,9 +54,13 @@ test('build output contains the landing page title, copy, and screenshot assets'
   assert.match(jsBundle, /Save what matters locally/);
   assert.match(jsBundle, /Reopen what people send/);
   assert.match(jsBundle, /Share over local Wi-Fi/);
-  assert.match(jsBundle, /Share first, sign up later/);
-  assert.match(jsBundle, /Your identity works across apps/);
-  assert.match(jsBundle, /Reuse one account across apps/);
+  assert.match(jsBundle, /No platform account required/);
+  assert.match(jsBundle, /One identity across apps/);
+  assert.match(
+    jsBundle,
+    /Use the same profile, contacts, and follows across apps when you want to, without tying them to a single platform account\./,
+  );
+  assert.match(jsBundle, /Bring your network with you/);
   assert.match(jsBundle, /Download for Mac/);
   assert.match(jsBundle, /Other downloads/);
   assert.match(jsBundle, /upload\.iris\.to/);

@@ -78,8 +78,8 @@
     {
       src: `${baseUrl}browser-permission.png`,
       alt: 'Iris Browser asking before a website uses your account',
-      title: 'Your identity works across apps',
-      body: 'Use the same account across apps instead of starting over with a new login and an empty profile each time.',
+      title: 'One identity across apps',
+      body: 'Use the same profile, contacts, and follows across apps when you want to, without tying them to a single platform account.',
     },
   ];
 
@@ -109,14 +109,14 @@
       tone: 'amber',
     },
     {
-      title: 'Share first, sign up later',
-      body: 'People can open what you sent without creating an account before they even know if they want it.',
+      title: 'No platform account required',
+      body: 'People can open what you sent without email addresses, phone numbers, or Google/Apple sign-ins.',
       icon: 'share',
       tone: 'violet',
     },
     {
-      title: 'Reuse one account across apps',
-      body: 'Your sign-in and profile can move with you instead of being locked to one platform or rebuilt from scratch.',
+      title: 'Bring your network with you',
+      body: 'Your profile, contacts, and follows can move across apps instead of being locked to one platform.',
       icon: 'user',
       tone: 'rose',
     },
@@ -562,7 +562,7 @@
   <title>browser.iris.to | Iris Browser</title>
   <meta
     name="description"
-    content="Open websites, apps, and files, keep working copies on your device, and share them without making everyone sign up first."
+    content="Open websites, apps, and files, keep working copies on your device, and share them without platform accounts getting in the way."
   />
 </svelte:head>
 
@@ -572,8 +572,8 @@
       <div class="copy">
         <h1>Sites, files, and apps should stay yours.</h1>
         <p class="lede">
-          Open websites, apps, and files, keep working copies on your device, and share them without making
-          everyone sign up first. Iris turns links into portable things you can reopen, move between
+          Open websites, apps, and files, keep working copies on your device, and share them without
+          platform accounts getting in the way. Iris turns links into portable things you can reopen, move between
           devices, and keep using when one platform disappears or changes the rules.
         </p>
 
