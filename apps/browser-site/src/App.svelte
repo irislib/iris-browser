@@ -3,11 +3,10 @@
 
   const baseUrl = import.meta.env.BASE_URL;
   const sourceUrl =
-    'https://git.iris.to/#/npub1xdhnr9mrv47kkrn95k6cwecearydeh8e895990n3acntwvmgk2dsdeeycm/iris-browser';
+    'https://git.iris.to/#/npub1xdhnr9mrv47kkrn95k6cwecearydeh8e895990n3acntwvmgk2dsdeeycm/iris-chromium';
   const hashtreeDevUrl = 'https://hashtree.cc/#/dev';
-  const githubRepo = 'irislib/iris-browser';
   const releaseBaseUrl =
-    'https://upload.iris.to/npub1xdhnr9mrv47kkrn95k6cwecearydeh8e895990n3acntwvmgk2dsdeeycm/releases%2Firis-browser/latest';
+    'https://upload.iris.to/npub1xdhnr9mrv47kkrn95k6cwecearydeh8e895990n3acntwvmgk2dsdeeycm/releases%2Firis-chromium/latest';
   const releaseManifestUrl = `${releaseBaseUrl}/release.json`;
 
   type DownloadAsset = {
@@ -26,14 +25,8 @@
   type ReleaseManifestAsset = {
     name: string;
     path: string;
-    size: number;
-  };
-
-  type GithubReleaseAsset = {
-    name: string;
-    browser_download_url?: string;
-    size: number;
-    state?: string;
+    size?: number;
+    size_bytes?: number;
   };
 
   type Screenshot = {
@@ -46,17 +39,19 @@
   type Benefit = {
     title: string;
     body: string;
-    icon: 'globe' | 'download' | 'bookmark' | 'wifi' | 'share' | 'user';
+    icon: 'globe' | 'download' | 'bookmark' | 'wifi' | 'shield' | 'wallet';
     tone: 'blue' | 'green' | 'teal' | 'amber' | 'violet' | 'rose';
   };
 
   const fallbackAsset: DownloadAsset = {
-    name: 'iris-v0.1.5-macos-arm64.zip',
-    href: `${releaseBaseUrl}/assets/iris-v0.1.5-macos-arm64.zip`,
+    name: 'iris-v149.0.7789.0-9cc924193f63-component-dirty-macos-arm64-app.zip',
+    href:
+      `${releaseBaseUrl}/assets/` +
+      'iris-v149.0.7789.0-9cc924193f63-component-dirty-macos-arm64-app.zip',
     label: 'Mac (Apple Silicon)',
     ctaLabel: 'Download for Mac',
-    size: 20_744_734,
-    sizeLabel: '19.8 MB',
+    size: 50_046_349,
+    sizeLabel: '47.7 MB',
     platform: 'mac',
     arch: 'arm64',
     priority: 50,
@@ -66,59 +61,59 @@
   const screenshots: Screenshot[] = [
     {
       src: `${baseUrl}browser-home.png`,
-      alt: 'Iris Browser home screen with favorites and suggestions',
-      title: 'Sites can live like apps',
-      body: 'Keep useful sites on your home screen like apps, without waiting for an app store or platform to approve them.',
+      alt: 'Iris Browser home screen with built-in apps and saved places',
+      title: 'Keep the useful things close',
+      body: 'Open saved sites, built-in tools, and everyday places from one calm home screen.',
     },
     {
-      src: `${baseUrl}browser-jumble.png`,
-      alt: 'Iris Browser opening a shared website',
-      title: 'Shared links become reusable',
-      body: 'A site or app someone sends you can stay on hand as something you reopen, not one message lost in chat.',
+      src: `${baseUrl}browser-wallet.png`,
+      alt: 'Iris Browser wallet page open in a tab',
+      title: 'A wallet in the browser',
+      body: 'Open your wallet in a tab to receive, pay, and manage digital cash without leaving Iris.',
     },
     {
       src: `${baseUrl}browser-permission.png`,
-      alt: 'Iris Browser asking before a website uses your account',
-      title: 'One identity across apps',
-      body: 'Use the same profile, contacts, and follows across apps when you want to, without tying them to a single platform account.',
+      alt: 'Iris Browser asking before a site uses wallet access',
+      title: 'Sites ask first',
+      body: 'Account and money access stay under your control instead of being handed out silently.',
     },
   ];
 
   const benefits: Benefit[] = [
     {
       title: 'Keep a copy, not just a link',
-      body: 'Sites and files stay portable instead of being trapped behind one host, app, or login.',
+      body: 'Sites and files stay with you instead of being trapped behind one host, app, or login.',
       icon: 'globe',
       tone: 'blue',
     },
     {
-      title: 'Save what matters locally',
-      body: 'Keep sites and apps on your device so bad signal, travel, or outages do not cut you off.',
+      title: 'Works offline',
+      body: 'Keep using saved sites, apps, and files when the connection is slow, spotty, or missing.',
       icon: 'download',
       tone: 'green',
     },
     {
-      title: 'Reopen what people send',
-      body: 'Shared sites, apps, and files stay easy to find again instead of vanishing into chat history.',
-      icon: 'bookmark',
+      title: 'Share nearby',
+      body: 'Pass a site or file straight to people around you instead of sending everything the long way around.',
+      icon: 'wifi',
       tone: 'teal',
     },
     {
-      title: 'Share over local Wi-Fi',
-      body: 'Pass a site or file to a nearby device directly instead of sending it the long way around.',
-      icon: 'wifi',
+      title: 'No platform account required',
+      body: 'People can open what you share without needing an email address, phone number, or third-party sign-in.',
+      icon: 'bookmark',
       tone: 'amber',
     },
     {
-      title: 'No platform account required',
-      body: 'People can open what you sent without email addresses, phone numbers, or Google/Apple sign-ins.',
-      icon: 'share',
+      title: 'Blocks ads and trackers',
+      body: 'Spend less time closing junk and more time on what you actually opened.',
+      icon: 'shield',
       tone: 'violet',
     },
     {
-      title: 'Bring your network with you',
-      body: 'Your profile, contacts, and follows can move across apps instead of being locked to one platform.',
-      icon: 'user',
+      title: 'Built for digital cash',
+      body: 'Send money as easily as sending a message, without asking anyone for permission first.',
+      icon: 'wallet',
       tone: 'rose',
     },
   ];
@@ -311,7 +306,7 @@
 
   function isDownloadableReleaseAsset(name: string): boolean {
     return (
-      /macos-arm64\.zip$/i.test(name) ||
+      /macos-arm64(?:-app)?\.zip$/i.test(name) ||
       /windows-(x64|arm64)-setup\.exe$/i.test(name) ||
       /linux-(x86_64|aarch64|arm64)\.(AppImage|deb)$/i.test(name) ||
       /android-arm64\.apk$/i.test(name)
@@ -319,7 +314,7 @@
   }
 
   function describeAsset(name: string): Omit<DownloadAsset, 'name' | 'href' | 'size' | 'sizeLabel'> {
-    if (/macos-arm64\.zip$/i.test(name)) {
+    if (/macos-arm64(?:-app)?\.zip$/i.test(name)) {
       return {
         label: 'Mac (Apple Silicon)',
         ctaLabel: 'Download for Mac',
@@ -502,20 +497,10 @@
     primaryDownload = sorted[0] ?? fallbackAsset;
   }
 
-  function githubReleaseApiUrl(tag?: string | null) {
-    if (tag?.trim()) {
-      return `https://api.github.com/repos/${githubRepo}/releases/tags/${encodeURIComponent(tag.trim())}`;
-    }
-    return `https://api.github.com/repos/${githubRepo}/releases/latest`;
-  }
-
   onMount(() => {
     let cancelled = false;
 
     async function loadReleaseAssets() {
-      let manifestTag = '';
-      let manifestAssets: DownloadAsset[] = [];
-
       try {
         const response = await fetch(releaseManifestUrl, { cache: 'no-store' });
         if (!response.ok) {
@@ -523,50 +508,25 @@
         }
 
         const manifest = await response.json() as {
-          tag?: string;
           assets?: ReleaseManifestAsset[];
         };
 
-        manifestTag = manifest.tag?.trim() ?? '';
-        manifestAssets = (manifest.assets ?? [])
+        const manifestAssets = (manifest.assets ?? [])
           .filter((asset) => isDownloadableReleaseAsset(asset.name))
-          .map((asset) => buildDownloadAsset(asset.name, `${releaseBaseUrl}/${asset.path}`, asset.size));
+          .map((asset) =>
+            buildDownloadAsset(
+              asset.name,
+              `${releaseBaseUrl}/${asset.path}`,
+              asset.size ?? asset.size_bytes ?? 0,
+            ));
+
+        const assets = dedupeAssets(manifestAssets);
+        if (!cancelled && assets.length > 0) {
+          releaseAssets = assets;
+          syncPrimaryDownload(assets);
+        }
       } catch (error) {
         console.warn('[browser-site] failed to load htree release manifest', error);
-      }
-
-      let githubAssets: DownloadAsset[] = [];
-
-      try {
-        const response = await fetch(githubReleaseApiUrl(manifestTag), {
-          cache: 'no-store',
-          headers: {
-            accept: 'application/vnd.github+json',
-          },
-        });
-        if (!response.ok) {
-          throw new Error(`GitHub release request failed with ${response.status}`);
-        }
-
-        const release = await response.json() as {
-          assets?: GithubReleaseAsset[];
-        };
-
-        githubAssets = (release.assets ?? [])
-          .filter((asset) =>
-            asset.state === 'uploaded' &&
-            !!asset.browser_download_url &&
-            isDownloadableReleaseAsset(asset.name),
-          )
-          .map((asset) => buildDownloadAsset(asset.name, asset.browser_download_url!, asset.size));
-      } catch (error) {
-        console.warn('[browser-site] failed to load GitHub release assets', error);
-      }
-
-      const assets = dedupeAssets([...manifestAssets, ...githubAssets]);
-      if (!cancelled && assets.length > 0) {
-        releaseAssets = assets;
-        syncPrimaryDownload(assets);
       }
     }
 
@@ -585,14 +545,6 @@
   });
 </script>
 
-<svelte:head>
-  <title>browser.iris.to | Iris Browser</title>
-  <meta
-    name="description"
-    content="Open websites, apps, and files, keep working copies on your device, and share them without platform accounts getting in the way."
-  />
-</svelte:head>
-
 <div class="site-shell">
   <main class="content">
     <section class="hero">
@@ -604,11 +556,11 @@
             <span class="brand-product">browser</span>
           </span>
         </p>
-        <h1>Sites, files, and apps should stay yours.</h1>
+        <h1>A better browser for websites, apps, and files.</h1>
         <p class="lede">
-          Open websites, apps, and files, keep working copies on your device, and share them without
-          platform accounts getting in the way. Iris turns links into portable things you can reopen, move between
-          devices, and keep using when one platform disappears or changes the rules.
+          Iris keeps useful things working offline, helps you share directly with people nearby,
+          blocks ads and trackers, and is built for simple digital cash. One browser can do more
+          than open tabs.
         </p>
 
         <div class="actions">
@@ -691,8 +643,8 @@
                     class="hero-shot"
                     src={screenshot.src}
                     alt={screenshot.alt}
-                    width="1964"
-                    height="1464"
+                    width="2800"
+                    height="1892"
                     loading={index === 0 ? 'eager' : 'lazy'}
                     draggable="false"
                   />
@@ -798,10 +750,10 @@
                     stroke-width="1.8"
                   />
                 </svg>
-              {:else if item.icon === 'share'}
+              {:else if item.icon === 'shield'}
                 <svg viewBox="0 0 24 24">
                   <path
-                    d="M14 5h5v5M10 14l9-9M19 14v3a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h3"
+                    d="M12 3.5 18 6v5.2c0 4.1-2.5 7.3-6 9.3-3.5-2-6-5.2-6-9.3V6l6-2.5Zm-2.2 8.2 1.6 1.6 3.3-3.6"
                     fill="none"
                     stroke="currentColor"
                     stroke-linecap="round"
@@ -812,7 +764,7 @@
               {:else}
                 <svg viewBox="0 0 24 24">
                   <path
-                    d="M15 18a6 6 0 0 0-6 0M12 12a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Zm0 10a10 10 0 1 1 0-20 10 10 0 0 1 0 20Z"
+                    d="M7 7.5h10a1.5 1.5 0 0 1 1.5 1.5v7A1.5 1.5 0 0 1 17 17.5H7A1.5 1.5 0 0 1 5.5 16V9A1.5 1.5 0 0 1 7 7.5Zm2-2.5V4.5A1.5 1.5 0 0 1 10.5 3h3A1.5 1.5 0 0 1 15 4.5V5"
                     fill="none"
                     stroke="currentColor"
                     stroke-linecap="round"
@@ -831,10 +783,10 @@
 
     <section class="portable-apps" aria-labelledby="portable-apps-title">
       <div class="portable-apps-copy">
-        <h2 id="portable-apps-title">Portable apps for everyday things</h2>
+        <h2 id="portable-apps-title">One place for sites, apps, and files</h2>
         <p>
-          Docs, maps, chat, social, video, audio, files, and other apps can work as portable
-          sites you keep and move, not just services rented from one platform.
+          Iris is meant to handle the everyday mix of reading, watching, chatting, saving, paying,
+          and sharing without scattering your stuff across app stores and locked-down services.
         </p>
       </div>
 
@@ -853,11 +805,10 @@
                 />
               </svg>
             </span>
-            <h3>No platform lock-in</h3>
+            <h3>Less lock-in</h3>
           </div>
           <p>
-            Your app, data, identity, and network do not have to stay trapped in one company's
-            account system.
+            Your stuff should not live or die inside one company's account system.
           </p>
         </article>
 
@@ -875,10 +826,10 @@
                 />
               </svg>
             </span>
-            <h3>Saved copies keep working</h3>
+            <h3>Still there tomorrow</h3>
           </div>
           <p>
-            If a host changes the rules or disappears, the copy you kept can still open.
+            What you save can keep opening even when a service changes, breaks, or disappears.
           </p>
         </article>
 
@@ -896,11 +847,11 @@
                 />
               </svg>
             </span>
-            <h3>Open distribution</h3>
+            <h3>Share without the maze</h3>
           </div>
           <p>
-            Apps can be shared directly, without app-store approval or mandatory email, phone, or
-            Google/Apple sign-ins.
+            You can pass things around more directly, without approval gates or mandatory platform
+            logins.
           </p>
         </article>
       </div>
@@ -1165,7 +1116,7 @@
   .viewport {
     overflow: hidden;
     border-radius: 1.45rem;
-    aspect-ratio: 1964 / 1464;
+    aspect-ratio: 1400 / 946;
   }
 
   .track {
@@ -1176,7 +1127,7 @@
   .slide {
     width: 100%;
     flex: 0 0 100%;
-    aspect-ratio: 1964 / 1464;
+    aspect-ratio: 1400 / 946;
   }
 
   .hero-shot {
