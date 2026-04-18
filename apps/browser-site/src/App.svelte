@@ -73,9 +73,9 @@
     },
     {
       src: `${baseUrl}browser-permission.png`,
-      alt: 'Iris Browser asking before a site uses wallet access',
+      alt: 'Iris Browser asking before a site checks wallet balance',
       title: 'Sites ask first',
-      body: 'Account and money access stay under your control instead of being handed out silently.',
+      body: 'Iris asks whether a site can check your balance or request a payment before it touches your wallet.',
     },
   ];
 
