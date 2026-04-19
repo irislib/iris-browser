@@ -69,7 +69,7 @@
       src: `${baseUrl}browser-wallet.png`,
       alt: 'Iris Browser wallet page open in a tab',
       title: 'A wallet in the browser',
-      body: 'Open your wallet in a tab to receive, pay, and manage digital cash without leaving Iris.',
+      body: 'Open your wallet in a tab to receive money, pay online, and manage everything without leaving Iris.',
     },
     {
       src: `${baseUrl}browser-permission.png`,
@@ -111,8 +111,8 @@
       tone: 'violet',
     },
     {
-      title: 'Built for digital cash',
-      body: 'Send money as easily as sending a message, without asking anyone for permission first.',
+      title: 'Simple online payments',
+      body: 'Pay online as easily as sending a message, without extra extensions or separate wallet apps.',
       icon: 'wallet',
       tone: 'rose',
     },
@@ -559,7 +559,7 @@
         <h1>A better browser for websites, apps, and files.</h1>
         <p class="lede">
           Iris keeps useful things working offline, helps you share directly with people nearby,
-          blocks ads and trackers, and is built for simple digital cash. One browser can do more
+          blocks ads and trackers, and makes online payments simple. One browser can do more
           than open tabs.
         </p>
 
