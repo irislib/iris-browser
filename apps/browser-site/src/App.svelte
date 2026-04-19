@@ -73,9 +73,9 @@
     },
     {
       src: `${baseUrl}browser-permission.png`,
-      alt: 'Iris Browser asking before a site checks wallet balance',
-      title: 'Sites ask first',
-      body: 'Iris asks whether a site can check your balance or request a payment before it touches your wallet.',
+      alt: 'Iris Browser connecting a site to the built-in wallet',
+      title: 'Works with websites',
+      body: 'Sites can use the built-in wallet for balance checks, invoices, and payments without extra extensions.',
     },
   ];
 
