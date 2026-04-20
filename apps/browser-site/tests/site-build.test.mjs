@@ -50,7 +50,7 @@ test('build output contains the landing page shell and screenshot assets', () =>
   assert.match(jsBundle, /upload\.iris\.to/);
   assert.match(jsBundle, /releases%2Firis-chromium\/latest/);
   assert.match(jsBundle, /release\.json/);
-  assert.match(jsBundle, /Iris-macos-arm64\.zip/);
+  assert.match(jsBundle, /Iris-macos-arm64\.dmg/);
   assert.match(jsBundle, /iris-chromium/);
   assert.match(jsBundle, /browser-home\.png/);
   assert.match(jsBundle, /browser-wallet\.png/);

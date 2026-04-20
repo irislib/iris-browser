@@ -44,16 +44,16 @@
   };
 
   const fallbackAsset: DownloadAsset = {
-    name: 'Iris-macos-arm64.zip',
-    href: `${releaseBaseUrl}/assets/Iris-macos-arm64.zip`,
+    name: 'Iris-macos-arm64.dmg',
+    href: `${releaseBaseUrl}/assets/Iris-macos-arm64.dmg`,
     label: 'Mac (Apple Silicon)',
     ctaLabel: 'Download for Mac',
-    size: 50_046_349,
-    sizeLabel: '47.7 MB',
+    size: 153_850_304,
+    sizeLabel: '146.7 MB',
     platform: 'mac',
     arch: 'arm64',
     priority: 50,
-    variantKey: 'mac-arm64-zip',
+    variantKey: 'mac-arm64-dmg',
   };
 
   const screenshots: Screenshot[] = [
@@ -304,7 +304,7 @@
 
   function isDownloadableReleaseAsset(name: string): boolean {
     return (
-      /macos-arm64(?:-app)?\.zip$/i.test(name) ||
+      /macos-arm64\.dmg$/i.test(name) ||
       /windows-(x64|arm64)-setup\.exe$/i.test(name) ||
       /linux-(x86_64|aarch64|arm64)\.(AppImage|deb)$/i.test(name) ||
       /android-arm64\.apk$/i.test(name)
@@ -312,14 +312,14 @@
   }
 
   function describeAsset(name: string): Omit<DownloadAsset, 'name' | 'href' | 'size' | 'sizeLabel'> {
-    if (/macos-arm64(?:-app)?\.zip$/i.test(name)) {
+    if (/macos-arm64\.dmg$/i.test(name)) {
       return {
         label: 'Mac (Apple Silicon)',
         ctaLabel: 'Download for Mac',
         platform: 'mac',
         arch: 'arm64',
         priority: 50,
-        variantKey: 'mac-arm64-zip',
+        variantKey: 'mac-arm64-dmg',
       };
     }
 
