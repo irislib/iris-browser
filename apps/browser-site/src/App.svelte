@@ -44,10 +44,8 @@
   };
 
   const fallbackAsset: DownloadAsset = {
-    name: 'iris-v149.0.7789.0-9cc924193f63-component-dirty-macos-arm64-app.zip',
-    href:
-      `${releaseBaseUrl}/assets/` +
-      'iris-v149.0.7789.0-9cc924193f63-component-dirty-macos-arm64-app.zip',
+    name: 'Iris-macos-arm64.zip',
+    href: `${releaseBaseUrl}/assets/Iris-macos-arm64.zip`,
     label: 'Mac (Apple Silicon)',
     ctaLabel: 'Download for Mac',
     size: 50_046_349,
