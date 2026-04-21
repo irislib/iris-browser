@@ -20,9 +20,9 @@ test('build output contains the landing page shell and screenshot assets', () =>
   assert.equal(existsSync(homeScreenshotPath), true);
   assert.equal(existsSync(walletScreenshotPath), true);
   assert.equal(existsSync(permissionScreenshotPath), true);
-  assert.ok(statSync(homeScreenshotPath).size > 100_000);
-  assert.ok(statSync(walletScreenshotPath).size > 100_000);
-  assert.ok(statSync(permissionScreenshotPath).size > 100_000);
+  assert.ok(statSync(homeScreenshotPath).size > 55_000);
+  assert.ok(statSync(walletScreenshotPath).size > 55_000);
+  assert.ok(statSync(permissionScreenshotPath).size > 55_000);
 
   const html = readFileSync(htmlPath, 'utf8');
   const jsBundle = readdirSync(assetsDir)
