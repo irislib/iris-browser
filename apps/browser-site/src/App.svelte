@@ -8,7 +8,8 @@
   const releaseBaseUrl =
     'https://upload.iris.to/npub1xdhnr9mrv47kkrn95k6cwecearydeh8e895990n3acntwvmgk2dsdeeycm/releases%2Firis-chromium/latest';
   const releaseManifestUrl = `${releaseBaseUrl}/release.json`;
-  const githubReleaseUrl = 'https://api.github.com/repos/irislib/iris-browser/releases/latest';
+
+  type DownloadIcon = 'mac' | 'windows' | 'linux' | 'android' | 'download';
 
   type DownloadAsset = {
     name: string;
@@ -21,6 +22,7 @@
     arch: 'arm64' | 'x64' | 'unknown';
     priority: number;
     variantKey: string;
+    icon: DownloadIcon;
   };
 
   type ReleaseManifestAsset = {
@@ -28,12 +30,6 @@
     path: string;
     size?: number;
     size_bytes?: number;
-  };
-
-  type GitHubReleaseAsset = {
-    name: string;
-    browser_download_url?: string;
-    size?: number;
   };
 
   type Screenshot = {
@@ -61,6 +57,7 @@
     arch: 'arm64',
     priority: 50,
     variantKey: 'mac-arm64',
+    icon: 'mac',
   };
 
   const screenshots: Screenshot[] = [
@@ -122,6 +119,19 @@
       tone: 'rose',
     },
   ];
+
+  const androidIconPath =
+    'm7.2 4.2-1.4-2 1-.7 1.5 2.1A8.6 8.6 0 0 1 12 2.8c1.3 0 2.6.3 3.7.8l1.5-2.1 1 .7-1.4 2A7.8 7.8 0 0 1 20 10v.8H4V10c0-2.4 1.2-4.5 3.2-5.8ZM8.8 8.1c.5 0 .9-.4.9-.9s-.4-.9-.9-.9-.9.4-.9.9.4.9.9.9Zm6.4 0c.5 0 .9-.4.9-.9s-.4-.9-.9-.9-.9.4-.9.9.4.9.9.9ZM4.1 12.2H20V20a2 2 0 0 1-2 2H6.1a2 2 0 0 1-2-2v-7.8Z';
+  const downloadIconPaths: Record<DownloadIcon, string> = {
+    mac: 'M16.7 2.5c.1 1.2-.4 2.3-1.2 3.1-.8.8-1.8 1.3-3 1.2-.1-1.1.4-2.2 1.2-3 .8-.8 1.9-1.3 3-1.3Zm3.5 15.1c-.5 1.2-.8 1.7-1.5 2.8-1 1.5-2.4 3.3-4.1 3.3-1.5 0-1.9-1-3.9-1s-2.5 1-3.9 1c-1.7 0-3-1.7-4-3.2C.1 16.3-.2 11.3 1.6 8.7 2.8 7 4.7 6 6.6 6c1.9 0 3 .9 4.5.9 1.5 0 2.4-.9 4.5-.9 1.6 0 3.3.9 4.5 2.4-4 2.2-3.3 7.9.1 9.2Z',
+    windows:
+      'M3 4.2 10.8 3v8.2H3V4.2Zm9.2-1.4L21 1.5v9.7h-8.8V2.8ZM3 12.8h7.8V21L3 19.8v-7Zm9.2 0H21v9.7l-8.8-1.3v-8.4Z',
+    linux:
+      'M12 2.2c2.4 0 4.2 2.2 4.2 5.1 0 1.3.5 2.6 1.4 3.9 1 1.4 1.7 3.1 1.7 5.2 0 3.2-2.9 5.4-7.3 5.4s-7.3-2.2-7.3-5.4c0-2 .7-3.7 1.7-5.2.9-1.3 1.4-2.6 1.4-3.9 0-2.9 1.8-5.1 4.2-5.1Zm-2 5.2c.6 0 1-.5 1-1.1s-.4-1.1-1-1.1-1 .5-1 1.1.4 1.1 1 1.1Zm4 0c.6 0 1-.5 1-1.1s-.4-1.1-1-1.1-1 .5-1 1.1.4 1.1 1 1.1Zm-2 2c-.9 0-1.6.5-1.6 1.1 0 .5.7.9 1.6.9s1.6-.4 1.6-.9c0-.6-.7-1.1-1.6-1.1Z',
+    android: androidIconPath,
+    download:
+      'M12 3a1 1 0 0 1 1 1v8.6l2.8-2.8a1 1 0 1 1 1.4 1.4l-4.5 4.5a1 1 0 0 1-1.4 0l-4.5-4.5a1 1 0 1 1 1.4-1.4l2.8 2.8V4a1 1 0 0 1 1-1ZM5 19a1 1 0 0 1 1-1h12a1 1 0 1 1 0 2H6a1 1 0 0 1-1-1Z',
+  };
 
   let current = $state(0);
   let dragOffset = $state(0);
@@ -327,6 +337,7 @@
         arch: 'arm64',
         priority: 50,
         variantKey: 'mac-arm64',
+        icon: 'mac',
       };
     }
 
@@ -338,6 +349,7 @@
         arch: 'x64',
         priority: 40,
         variantKey: 'windows-x64-exe',
+        icon: 'windows',
       };
     }
 
@@ -349,6 +361,7 @@
         arch: 'arm64',
         priority: 39,
         variantKey: 'windows-arm64-exe',
+        icon: 'windows',
       };
     }
 
@@ -360,6 +373,7 @@
         arch: 'arm64',
         priority: 45,
         variantKey: 'android-arm64-apk',
+        icon: 'android',
       };
     }
 
@@ -371,6 +385,7 @@
         arch: 'x64',
         priority: 35,
         variantKey: 'linux-x64-appimage',
+        icon: 'linux',
       };
     }
 
@@ -382,6 +397,7 @@
         arch: 'arm64',
         priority: 34,
         variantKey: 'linux-arm64-appimage',
+        icon: 'linux',
       };
     }
 
@@ -393,6 +409,7 @@
         arch: 'x64',
         priority: 33,
         variantKey: 'linux-x64-deb',
+        icon: 'linux',
       };
     }
 
@@ -404,6 +421,7 @@
         arch: 'arm64',
         priority: 32,
         variantKey: 'linux-arm64-deb',
+        icon: 'linux',
       };
     }
 
@@ -414,6 +432,7 @@
       arch: 'unknown',
       priority: 0,
       variantKey: `name:${name.toLowerCase()}`,
+      icon: 'download',
     };
   }
 
@@ -502,6 +521,14 @@
     primaryDownload = sorted[0] ?? fallbackAsset;
   }
 
+  function downloadIconClass(icon: DownloadIcon) {
+    return `download-icon ${icon}`;
+  }
+
+  function downloadIconPath(icon: DownloadIcon) {
+    return downloadIconPaths[icon];
+  }
+
   async function loadHtreeReleaseAssets(): Promise<DownloadAsset[]> {
     const response = await fetch(releaseManifestUrl, { cache: 'no-store' });
     if (!response.ok) {
@@ -522,47 +549,18 @@
         ));
   }
 
-  async function loadGithubReleaseAssets(): Promise<DownloadAsset[]> {
-    const response = await fetch(githubReleaseUrl, { cache: 'no-store' });
-    if (!response.ok) {
-      throw new Error(`GitHub release request failed with ${response.status}`);
-    }
-
-    const release = await response.json() as {
-      assets?: GitHubReleaseAsset[];
-    };
-
-    return (release.assets ?? [])
-      .filter(
-        (asset): asset is GitHubReleaseAsset & { browser_download_url: string } =>
-          Boolean(asset.browser_download_url) && isDownloadableReleaseAsset(asset.name),
-      )
-      .map((asset) => buildDownloadAsset(asset.name, asset.browser_download_url, asset.size ?? 0));
-  }
-
   onMount(() => {
     let cancelled = false;
 
     async function loadReleaseAssets() {
-      const sourceNames = ['htree release manifest', 'GitHub release'] as const;
-      const sourceResults = await Promise.allSettled([
-        loadHtreeReleaseAssets(),
-        loadGithubReleaseAssets(),
-      ]);
-
-      const loadedAssets = sourceResults.flatMap((result, index) => {
-        if (result.status === 'fulfilled') {
-          return result.value;
+      try {
+        const assets = dedupeAssets(await loadHtreeReleaseAssets());
+        if (!cancelled && assets.length > 0) {
+          releaseAssets = assets;
+          syncPrimaryDownload(assets);
         }
-
-        console.warn(`[browser-site] failed to load ${sourceNames[index]}`, result.reason);
-        return [];
-      });
-
-      const assets = dedupeAssets(loadedAssets);
-      if (!cancelled && assets.length > 0) {
-        releaseAssets = assets;
-        syncPrimaryDownload(assets);
+      } catch (error) {
+        console.warn('[browser-site] failed to load htree release manifest', error);
       }
     }
 
@@ -614,11 +612,6 @@
             <span>{primaryDownload.ctaLabel}</span>
           </a>
           <a class="button secondary" href="#downloads">
-            <svg viewBox="0 0 24 24" aria-hidden="true">
-              <path
-                d="M4 5a1 1 0 0 1 1-1h5v7H4V5Zm10-1h5a1 1 0 0 1 1 1v6h-6V4ZM4 13h6v7H5a1 1 0 0 1-1-1v-6Zm10 0h6v6a1 1 0 0 1-1 1h-5v-7Z"
-              />
-            </svg>
             <span>All downloads</span>
           </a>
         </div>
@@ -732,8 +725,13 @@
       <div class="download-grid">
         {#each sortedDownloadAssets as asset}
           <a class="download-card" href={asset.href}>
-            <span class="download-label">{asset.label}</span>
-            <span class="download-size">{asset.sizeLabel || 'Download'}</span>
+            <span class={downloadIconClass(asset.icon)} aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d={downloadIconPath(asset.icon)} /></svg>
+            </span>
+            <span class="download-copy">
+              <span class="download-label">{asset.label}</span>
+              <span class="download-size">{asset.sizeLabel || 'Download'}</span>
+            </span>
           </a>
         {/each}
       </div>
@@ -1286,6 +1284,11 @@
     background: var(--surface-strong);
   }
 
+  .download-copy {
+    display: grid;
+    gap: 0.35rem;
+  }
+
   .download-label {
     font-weight: 700;
     line-height: 1.25;
@@ -1295,6 +1298,57 @@
     color: var(--text-2);
     font-size: 0.9rem;
     line-height: 1.35;
+  }
+
+  .download-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.05rem;
+    height: 2.05rem;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--surface-soft) 82%, transparent);
+    color: var(--text-2);
+  }
+
+  .download-icon svg {
+    width: 1.15rem;
+    height: 1.15rem;
+    fill: currentColor;
+  }
+
+  .download-icon.mac {
+    color: #5f6368;
+  }
+
+  .download-icon.windows {
+    color: #2d6df6;
+  }
+
+  .download-icon.linux {
+    color: #b06a00;
+  }
+
+  .download-icon.android {
+    color: #1d9159;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .download-icon.mac {
+      color: #f6f2ec;
+    }
+
+    .download-icon.windows {
+      color: #8bb3ff;
+    }
+
+    .download-icon.linux {
+      color: #f0bb61;
+    }
+
+    .download-icon.android {
+      color: #73d29c;
+    }
   }
 
   .benefit {

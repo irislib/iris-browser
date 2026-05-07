@@ -49,8 +49,8 @@ test('build output contains the landing page shell and screenshot assets', () =>
   assert.match(jsBundle, /Download for Mac/);
   assert.match(jsBundle, /Download Iris Browser/);
   assert.match(jsBundle, /upload\.iris\.to/);
-  assert.match(jsBundle, /api\.github\.com\/repos\/irislib\/iris-browser\/releases\/latest/);
-  assert.match(jsBundle, /browser_download_url/);
+  assert.doesNotMatch(jsBundle, /api\.github\.com\/repos\/irislib\/iris-browser\/releases\/latest/);
+  assert.doesNotMatch(jsBundle, /browser_download_url/);
   assert.match(jsBundle, /releases%2Firis-chromium\/latest/);
   assert.match(jsBundle, /release\.json/);
   assert.match(jsBundle, /Iris-macos-arm64\.dmg/);
@@ -60,6 +60,7 @@ test('build output contains the landing page shell and screenshot assets', () =>
   assert.match(jsBundle, /browser-permission\.png/);
   assert.match(cssBundle, /align-items:start/);
   assert.match(cssBundle, /\.download-grid/);
+  assert.match(cssBundle, /\.download-icon/);
   assert.match(cssBundle, /aspect-ratio:1400\s*\/\s*946/);
   assert.match(cssBundle, /min-height:5\.4rem/);
 });
