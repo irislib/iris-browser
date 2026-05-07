@@ -8,6 +8,7 @@
   const releaseBaseUrl =
     'https://upload.iris.to/npub1xdhnr9mrv47kkrn95k6cwecearydeh8e895990n3acntwvmgk2dsdeeycm/releases%2Firis-chromium/latest';
   const releaseManifestUrl = `${releaseBaseUrl}/release.json`;
+  const githubReleaseUrl = 'https://api.github.com/repos/irislib/iris-browser/releases/latest';
 
   type DownloadAsset = {
     name: string;
@@ -27,6 +28,12 @@
     path: string;
     size?: number;
     size_bytes?: number;
+  };
+
+  type GitHubReleaseAsset = {
+    name: string;
+    browser_download_url?: string;
+    size?: number;
   };
 
   type Screenshot = {
@@ -53,7 +60,7 @@
     platform: 'mac',
     arch: 'arm64',
     priority: 50,
-    variantKey: 'mac-arm64-dmg',
+    variantKey: 'mac-arm64',
   };
 
   const screenshots: Screenshot[] = [
@@ -121,7 +128,7 @@
   let isDragging = $state(false);
   let releaseAssets = $state<DownloadAsset[]>([fallbackAsset]);
   let primaryDownload = $state<DownloadAsset>(fallbackAsset);
-  let showAllDownloads = $state(false);
+  let sortedDownloadAssets = $derived(sortAssets(releaseAssets));
   let autoInterval: ReturnType<typeof setInterval> | undefined;
   let isHovered = $state(false);
   let hasFocusWithin = $state(false);
@@ -304,22 +311,22 @@
 
   function isDownloadableReleaseAsset(name: string): boolean {
     return (
-      /macos-arm64\.dmg$/i.test(name) ||
+      /macos-arm64\.(dmg|zip)$/i.test(name) ||
       /windows-(x64|arm64)-setup\.exe$/i.test(name) ||
-      /linux-(x86_64|aarch64|arm64)\.(AppImage|deb)$/i.test(name) ||
+      /linux-(x86_64|x64|aarch64|arm64)\.(AppImage|deb)$/i.test(name) ||
       /android-arm64\.apk$/i.test(name)
     );
   }
 
   function describeAsset(name: string): Omit<DownloadAsset, 'name' | 'href' | 'size' | 'sizeLabel'> {
-    if (/macos-arm64\.dmg$/i.test(name)) {
+    if (/macos-arm64\.(dmg|zip)$/i.test(name)) {
       return {
         label: 'Mac (Apple Silicon)',
         ctaLabel: 'Download for Mac',
         platform: 'mac',
         arch: 'arm64',
         priority: 50,
-        variantKey: 'mac-arm64-dmg',
+        variantKey: 'mac-arm64',
       };
     }
 
@@ -356,7 +363,7 @@
       };
     }
 
-    if (/linux-x86_64\.AppImage$/i.test(name)) {
+    if (/linux-(x86_64|x64)\.AppImage$/i.test(name)) {
       return {
         label: 'Linux (portable AppImage)',
         ctaLabel: 'Download for Linux',
@@ -378,7 +385,7 @@
       };
     }
 
-    if (/linux-x86_64\.deb$/i.test(name)) {
+    if (/linux-(x86_64|x64)\.deb$/i.test(name)) {
       return {
         label: 'Linux (Debian/Ubuntu)',
         ctaLabel: 'Download for Linux',
@@ -495,36 +502,67 @@
     primaryDownload = sorted[0] ?? fallbackAsset;
   }
 
+  async function loadHtreeReleaseAssets(): Promise<DownloadAsset[]> {
+    const response = await fetch(releaseManifestUrl, { cache: 'no-store' });
+    if (!response.ok) {
+      throw new Error(`Release manifest request failed with ${response.status}`);
+    }
+
+    const manifest = await response.json() as {
+      assets?: ReleaseManifestAsset[];
+    };
+
+    return (manifest.assets ?? [])
+      .filter((asset) => isDownloadableReleaseAsset(asset.name))
+      .map((asset) =>
+        buildDownloadAsset(
+          asset.name,
+          `${releaseBaseUrl}/${asset.path}`,
+          asset.size ?? asset.size_bytes ?? 0,
+        ));
+  }
+
+  async function loadGithubReleaseAssets(): Promise<DownloadAsset[]> {
+    const response = await fetch(githubReleaseUrl, { cache: 'no-store' });
+    if (!response.ok) {
+      throw new Error(`GitHub release request failed with ${response.status}`);
+    }
+
+    const release = await response.json() as {
+      assets?: GitHubReleaseAsset[];
+    };
+
+    return (release.assets ?? [])
+      .filter(
+        (asset): asset is GitHubReleaseAsset & { browser_download_url: string } =>
+          Boolean(asset.browser_download_url) && isDownloadableReleaseAsset(asset.name),
+      )
+      .map((asset) => buildDownloadAsset(asset.name, asset.browser_download_url, asset.size ?? 0));
+  }
+
   onMount(() => {
     let cancelled = false;
 
     async function loadReleaseAssets() {
-      try {
-        const response = await fetch(releaseManifestUrl, { cache: 'no-store' });
-        if (!response.ok) {
-          throw new Error(`Release manifest request failed with ${response.status}`);
+      const sourceNames = ['htree release manifest', 'GitHub release'] as const;
+      const sourceResults = await Promise.allSettled([
+        loadHtreeReleaseAssets(),
+        loadGithubReleaseAssets(),
+      ]);
+
+      const loadedAssets = sourceResults.flatMap((result, index) => {
+        if (result.status === 'fulfilled') {
+          return result.value;
         }
 
-        const manifest = await response.json() as {
-          assets?: ReleaseManifestAsset[];
-        };
+        console.warn(`[browser-site] failed to load ${sourceNames[index]}`, result.reason);
+        return [];
+      });
 
-        const manifestAssets = (manifest.assets ?? [])
-          .filter((asset) => isDownloadableReleaseAsset(asset.name))
-          .map((asset) =>
-            buildDownloadAsset(
-              asset.name,
-              `${releaseBaseUrl}/${asset.path}`,
-              asset.size ?? asset.size_bytes ?? 0,
-            ));
-
-        const assets = dedupeAssets(manifestAssets);
-        if (!cancelled && assets.length > 0) {
-          releaseAssets = assets;
-          syncPrimaryDownload(assets);
-        }
-      } catch (error) {
-        console.warn('[browser-site] failed to load htree release manifest', error);
+      const assets = dedupeAssets(loadedAssets);
+      if (!cancelled && assets.length > 0) {
+        releaseAssets = assets;
+        syncPrimaryDownload(assets);
       }
     }
 
@@ -575,28 +613,15 @@
             </svg>
             <span>{primaryDownload.ctaLabel}</span>
           </a>
-          {#if releaseAssets.length > 1}
-            <button
-              type="button"
-              class="button secondary"
-              aria-expanded={showAllDownloads}
-              onclick={() => (showAllDownloads = !showAllDownloads)}
-            >
-              {showAllDownloads ? 'Hide downloads' : 'Other downloads'}
-            </button>
-          {/if}
+          <a class="button secondary" href="#downloads">
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M4 5a1 1 0 0 1 1-1h5v7H4V5Zm10-1h5a1 1 0 0 1 1 1v6h-6V4ZM4 13h6v7H5a1 1 0 0 1-1-1v-6Zm10 0h6v6a1 1 0 0 1-1 1h-5v-7Z"
+              />
+            </svg>
+            <span>All downloads</span>
+          </a>
         </div>
-
-        {#if showAllDownloads && releaseAssets.length > 1}
-          <div class="download-list">
-            {#each sortAssets(releaseAssets) as asset}
-              <a class="download-item" href={asset.href}>
-                <span class="download-label">{asset.label}</span>
-                <span class="download-size">{asset.sizeLabel || 'Download'}</span>
-              </a>
-            {/each}
-          </div>
-        {/if}
       </div>
 
       <!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
@@ -696,6 +721,21 @@
             ></button>
           {/each}
         </div>
+      </div>
+    </section>
+
+    <section class="downloads" id="downloads" aria-labelledby="downloads-title">
+      <div class="downloads-head">
+        <h2 id="downloads-title">Download Iris Browser</h2>
+      </div>
+
+      <div class="download-grid">
+        {#each sortedDownloadAssets as asset}
+          <a class="download-card" href={asset.href}>
+            <span class="download-label">{asset.label}</span>
+            <span class="download-size">{asset.sizeLabel || 'Download'}</span>
+          </a>
+        {/each}
       </div>
     </section>
 
@@ -1065,38 +1105,6 @@
     color: var(--text-1);
   }
 
-  .download-list {
-    display: grid;
-    gap: 0.75rem;
-    margin-top: 1rem;
-    padding: 0.95rem;
-    border: 1px solid var(--border);
-    border-radius: 1.2rem;
-    background: var(--surface);
-    backdrop-filter: blur(14px);
-  }
-
-  .download-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-    padding: 0.82rem 0.95rem;
-    border-radius: 1rem;
-    background: var(--surface-strong);
-    text-decoration: none;
-  }
-
-  .download-label {
-    font-weight: 600;
-  }
-
-  .download-size {
-    color: var(--text-2);
-    font-size: 0.9rem;
-    white-space: nowrap;
-  }
-
   .gallery {
     padding: 0;
     outline: none;
@@ -1232,6 +1240,63 @@
     margin-top: 2.35rem;
   }
 
+  .downloads {
+    scroll-margin-top: 1rem;
+    margin-top: 2.35rem;
+  }
+
+  .downloads-head {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 0.85rem;
+    margin-bottom: 0.95rem;
+  }
+
+  .downloads h2 {
+    margin: 0;
+    font-size: clamp(1.55rem, 3vw, 2.25rem);
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+  }
+
+  .download-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+
+  .download-card {
+    display: flex;
+    min-height: 7rem;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 0.9rem;
+    padding: 1rem;
+    border-radius: 8px;
+    background: color-mix(in srgb, var(--surface-strong) 90%, transparent);
+    text-decoration: none;
+    transition:
+      transform 140ms ease,
+      background-color 140ms ease;
+  }
+
+  .download-card:hover {
+    transform: translateY(-1px);
+    background: var(--surface-strong);
+  }
+
+  .download-label {
+    font-weight: 700;
+    line-height: 1.25;
+  }
+
+  .download-size {
+    color: var(--text-2);
+    font-size: 0.9rem;
+    line-height: 1.35;
+  }
+
   .benefit {
     padding: 1.18rem 1.16rem 1.14rem;
     border-radius: 1.2rem;
@@ -1337,6 +1402,10 @@
   }
 
   @media (max-width: 1080px) {
+    .download-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
     .benefits {
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
@@ -1580,6 +1649,10 @@
 
     .caption-title {
       font-size: 1.08rem;
+    }
+
+    .download-grid {
+      grid-template-columns: 1fr;
     }
 
     .benefit {
