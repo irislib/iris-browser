@@ -289,6 +289,9 @@ function assertStepSucceeded(step, result) {
 }
 
 export async function runRelease(options, runner = defaultRunner, hooks = {}) {
+  if (!options.dryRun && runner === defaultRunner) {
+    throw new Error('browser.iris.to is archived; site publishing is disabled.');
+  }
   const plan = createReleasePlan(options);
   const buildOutputExists = hooks.buildOutputExists ?? existsSync;
 

@@ -3,6 +3,12 @@ import assert from 'node:assert/strict';
 
 import { createReleasePlan, parseArgs, runRelease } from '../scripts/release-site.mjs';
 
+test('refuses live publication of the archived site', async () => {
+  for (const args of [[], ['--skip-cloudflare'], ['--pages-only', '--pages-project', 'example']]) {
+    await assert.rejects(runRelease(parseArgs(args, {})), /archived; site publishing is disabled/);
+  }
+});
+
 test('uses the built-in Worker default with production route and domain', () => {
   const parsed = parseArgs([]);
 
